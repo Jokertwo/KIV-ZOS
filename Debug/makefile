@@ -29,7 +29,7 @@ all: ZOS
 ZOS: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o"ZOS" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -pthread  -o"ZOS" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -4,13 +4,22 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/ZOS.c 
+../src/ZOS.c \
+../src/bitMap.c \
+../src/createBootFile.c \
+../src/load.c 
 
 OBJS += \
-./src/ZOS.o 
+./src/ZOS.o \
+./src/bitMap.o \
+./src/createBootFile.o \
+./src/load.o 
 
 C_DEPS += \
-./src/ZOS.d 
+./src/ZOS.d \
+./src/bitMap.d \
+./src/createBootFile.d \
+./src/load.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
