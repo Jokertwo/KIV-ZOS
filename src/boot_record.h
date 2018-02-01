@@ -7,8 +7,8 @@
 #include <stdint.h>
 
 
-#ifndef BOOT_RECORD_H_
-#define BOOT_RECORD_H_
+#ifndef BOOT_RECORD_H_GUARD
+#define BOOT_RECORD_H_GUARD
 
 typedef struct boot_record {
 	char signature[9]; //login autora FS

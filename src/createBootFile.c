@@ -10,8 +10,7 @@
 
 #include "boot_record.h"
 #include "createBootFile.h"
-
-
+#include "bitMap.h"
 
 int pocetMftItem = 10;
 
@@ -33,12 +32,14 @@ void *createTextFile(void *arg) {
 	strcpy(boot->signature, "Test01");
 	strcpy(boot->volume_descriptor, "Prvni pokus o bootFile");
 	boot->cluster_size = 1024;
-	boot->cluster_count = 20;
+	boot->cluster_count = 32;
 	boot->disk_size = boot->cluster_size * boot->cluster_count;
-	boot->mft_max_fragment_count = 5;
+	boot->mft_max_fragment_count = MAX_FRAGMENT_COUNT;
 	boot->mft_start_address = 288;
-	boot->bitmap_start_address = boot->mft_start_address + (sizeof(mft_item) * pocetMftItem);
-	boot->data_start_address = boot->bitmap_start_address + (boot->cluster_count * sizeof(int8_t));
+	boot->bitmap_start_address = boot->mft_start_address + (sizeof(Mft_Item)
+			* pocetMftItem);
+	boot->data_start_address = boot->bitmap_start_address
+			+ (boot->cluster_count * sizeof(int8_t));
 
 	//zapisu do souboru
 	printf("Zapisuju do souboru\n");
@@ -48,31 +49,57 @@ void *createTextFile(void *arg) {
 
 	//zapisu mft itemy
 	int a = boot->bitmap_start_address - boot->mft_start_address;
-	a = a / sizeof(mft_item);
-	for (int i = 0; i < a; i++) {
-		fseek(fp, boot->mft_start_address + (i * sizeof(mft_item)), SEEK_SET);
-		mft_item *item = createItem(FREE_ITEM, 0, 1, 1, "0", 1);
-		fwrite(item, sizeof(mft_item), 1, fp);
+	a = a / sizeof(Mft_Item);
+	for (int i = 1; i < a; i++) {
+		fseek(fp, boot->mft_start_address + (i * sizeof(Mft_Item)), SEEK_SET);
+		Mft_Item *item = createItem(FREE_ITEM , 0, 1, 1, "0", 1);
+		fwrite(item, sizeof(Mft_Item), 1, fp);
 		free(item);
 	}
 
 	//zapisu bitmapu
-	int8_t *bitmap = (int8_t*) calloc(boot->cluster_count, sizeof(int8_t));
+	bitmap = calloc(boot->cluster_count / 8, sizeof(int8_t));
 	fseek(fp, boot->bitmap_start_address, SEEK_SET);
-	fwrite(bitmap, boot->cluster_count * sizeof(int8_t), 1, fp);
+	fwrite(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
+
+	//vytvorim a zapisu korenovy adresar
+	Mft_Item *root = createItem(1, 1, 1, 1, "ROOT", 1);
+	root->fragments[0].fragment_count = 1;
+	root->fragments[0].fragment_start_address = boot->data_start_address;
+
+	//vytvorim cluster
+	char *cluster = calloc(2, sizeof(char));
+	cluster[0] = '0';
+	cluster[1] = '\0';
+
+	//zapisu do souboru mft zaznam
+	fseek(fp, boot->mft_start_address, SEEK_SET);
+	fwrite(root, sizeof(Mft_Item), 1, fp);
+
+	//zapisu do bitmapy
+	writeBit(1);
+	fseek(fp, boot->bitmap_start_address, SEEK_SET);
+	fwrite(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
+
+	//zapisu cluster
+	fseek(fp, boot->data_start_address, SEEK_SET);
+	fwrite(cluster, 2, 1, fp);
 
 	//uvolnim pamet
 	free(bitmap);
 	free(boot);
+	free(cluster);
+	free(root);
+
 	//zavru soubor
 	fclose(fp);
 
-
 	return (int*) 1;
 }
-mft_item *createItem(int32_t UID, bool isDirectory, int8_t itemOrder,
+
+Mft_Item *createItem(int32_t UID, bool isDirectory, int8_t itemOrder,
 		int8_t itemOrderTotal, char *name, int32_t itemSize) {
-	mft_item *item = malloc(sizeof(struct mft_item));
+	Mft_Item *item = malloc(sizeof(Mft_Item));
 	item->uid = UID;
 	item->isDirectory = isDirectory;
 	item->item_order = itemOrder;
@@ -80,17 +107,15 @@ mft_item *createItem(int32_t UID, bool isDirectory, int8_t itemOrder,
 	memset(item->item_name, 0, sizeof(item->item_name));
 	strcpy(item->item_name, name);
 	item->item_size = itemSize;
-	for (int i = 0; i < 32; i++) {
-		item->fragments[i] = createFragment();
+	for (int i = 0; i < MAX_FRAGMENT_COUNT; i++) {
+		createFragment(item, i);
 	}
 	return item;
 }
-mft_fragment createFragment() {
-	struct mft_fragment fragment;
-	fragment.fragment_count = 1;
-	fragment.fragment_start_address = 0;
-	return fragment;
+void createFragment(Mft_Item *item, int i) {
+
+	item->fragments[i].fragment_count = 0;
+	item->fragments[i].fragment_start_address = 0;
+
 }
-
-
 

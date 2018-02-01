@@ -19,8 +19,8 @@ int main(void) {
 
 	pthread_t a,b;
 
-	//pthread_create(&a, NULL, createTextFile, NULL);
-	//pthread_join(a,NULL);
+	pthread_create(&a, NULL, createTextFile, NULL);
+	pthread_join(a,NULL);
 	pthread_create(&b,NULL,readBoot,NULL);
 	pthread_join(b,NULL);
 

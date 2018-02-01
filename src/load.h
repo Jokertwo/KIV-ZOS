@@ -5,13 +5,13 @@
  *      Author: jokertwo
  */
 
-#ifndef LOAD_H_
-#define LOAD_H_
+#ifndef LOAD_H_GUARD
+#define LOAD_H_GUARD
 
-#include "mft_item.h"
+#include "mftHelper.h"
 #include "boot_record.h"
 #include "globalVariable.h"
 
 void *readBoot(void *arg);
-void printMftItem(mft_item *item);
+
 #endif /* LOAD_H_ */

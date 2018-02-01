@@ -28,9 +28,9 @@ void disposeBitMap() {
 	free(bitmap);
 }
 
-void printBits(int sizeOfBitmap) {
+void printBits(int sizeOfBitmap,int8_t *bitmap2) {
 	for (int i = 0; i < sizeOfBitmap; i++) {
-		unsigned char *b = (unsigned char*) &bitmap[i];
+		unsigned char *b = (unsigned char*) &bitmap2[i];
 		unsigned char byte;
 		int i, j;
 

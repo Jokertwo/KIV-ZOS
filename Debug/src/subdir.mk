@@ -7,19 +7,22 @@ C_SRCS += \
 ../src/ZOS.c \
 ../src/bitMap.c \
 ../src/createBootFile.c \
-../src/load.c 
+../src/load.c \
+../src/mftHelper.c 
 
 OBJS += \
 ./src/ZOS.o \
 ./src/bitMap.o \
 ./src/createBootFile.o \
-./src/load.o 
+./src/load.o \
+./src/mftHelper.o 
 
 C_DEPS += \
 ./src/ZOS.d \
 ./src/bitMap.d \
 ./src/createBootFile.d \
-./src/load.d 
+./src/load.d \
+./src/mftHelper.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

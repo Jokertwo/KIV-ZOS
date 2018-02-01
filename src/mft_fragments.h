@@ -5,8 +5,8 @@
  *      Author: jokertwo
  */
 
-#ifndef MFT_FRAGMENTS_H_
-#define MFT_FRAGMENTS_H_
+#ifndef MFT_FRAGMENTS_H_GUARD
+#define MFT_FRAGMENTS_H_GUARD
 
 
 typedef struct mft_fragment {

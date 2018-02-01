@@ -8,6 +8,8 @@
 #ifndef BITMAP_H_
 #define BITMAP_H_
 
+#include <pthread.h>
+
 #define TRUE 1
 #define FALSE 0
 #define SIZE 8
@@ -22,7 +24,7 @@ pthread_rwlock_t lock;
 
 #endif /* BITMAP_H_ */
 
-void printBits(int sizeOfBitmap);
+void printBits(int sizeOfBitmap,int8_t *bitmap2);
 void disposeBitMap(void);
 int writeBit(int bit);
 int deleteBit(int bit);
