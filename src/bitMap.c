@@ -71,6 +71,15 @@ int deleteBit(int bit) {
 	pthread_rwlock_unlock(&lock);
 	return TRUE;
 }
+int getFreeBit(int countOfClusters){
+	int i;
+	for(i = 0; i < countOfClusters; i++){
+		if(checkIfIsFree(i) == TRUE){
+			return i;
+		}
+	}
+	return FALSE;
+}
 int checkIfIsFree(int bit) {
 	if (bit < 0) {
 		error_log("Bit can't be negative number");

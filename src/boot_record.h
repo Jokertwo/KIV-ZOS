@@ -23,6 +23,6 @@ typedef struct boot_record {
 // stejne jako   MFT_FRAGMENTS_COUNT
 }boot_record;
 
-
+boot_record *boot;
 
 #endif /* BOOT_RECORD_H_ */

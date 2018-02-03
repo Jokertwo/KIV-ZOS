@@ -13,17 +13,32 @@
 #include <pthread.h>
 
 #include "createBootFile.h"
-#include "load.h"
-
+#include "commandLine.h"
+void create(pthread_t a);
+void load(pthread_t a);
 int main(void) {
 
-	pthread_t a,b;
+	debug = 1;
+	pthread_t b;
 
-	pthread_create(&a, NULL, createTextFile, NULL);
-	pthread_join(a,NULL);
-	pthread_create(&b,NULL,readBoot,NULL);
-	pthread_join(b,NULL);
+	//create(b);
+	load(b);
 
+	pthread_create(&b, NULL, commandLine, NULL);
+	pthread_join(b, NULL);
+
+
+
+	clean();
 
 	return EXIT_SUCCESS;
+}
+void load(pthread_t a){
+	pthread_create(&a, NULL, readBoot, NULL);
+		pthread_join(a, NULL);
+}
+
+void create(pthread_t a) {
+	pthread_create(&a, NULL, createTextFile, NULL);
+	pthread_join(a, NULL);
 }

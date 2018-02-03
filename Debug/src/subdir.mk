@@ -6,23 +6,32 @@
 C_SRCS += \
 ../src/ZOS.c \
 ../src/bitMap.c \
+../src/clusterHelper.c \
+../src/commandLine.c \
 ../src/createBootFile.c \
 ../src/load.c \
-../src/mftHelper.c 
+../src/mftList.c \
+../src/shell.c 
 
 OBJS += \
 ./src/ZOS.o \
 ./src/bitMap.o \
+./src/clusterHelper.o \
+./src/commandLine.o \
 ./src/createBootFile.o \
 ./src/load.o \
-./src/mftHelper.o 
+./src/mftList.o \
+./src/shell.o 
 
 C_DEPS += \
 ./src/ZOS.d \
 ./src/bitMap.d \
+./src/clusterHelper.d \
+./src/commandLine.d \
 ./src/createBootFile.d \
 ./src/load.d \
-./src/mftHelper.d 
+./src/mftList.d \
+./src/shell.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

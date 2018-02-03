@@ -9,9 +9,8 @@
 #define BITMAP_H_
 
 #include <pthread.h>
+#include "globalVariable.h"
 
-#define TRUE 1
-#define FALSE 0
 #define SIZE 8
 
 #define error_log(...) { fprintf(stderr, __VA_ARGS__); fflush(stderr); }

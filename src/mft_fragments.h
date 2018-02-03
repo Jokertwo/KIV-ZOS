@@ -6,7 +6,9 @@
  */
 
 #ifndef MFT_FRAGMENTS_H_GUARD
+#include "globalVariable.h"
 #define MFT_FRAGMENTS_H_GUARD
+
 
 
 typedef struct mft_fragment {

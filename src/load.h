@@ -8,10 +8,11 @@
 #ifndef LOAD_H_GUARD
 #define LOAD_H_GUARD
 
-#include "mftHelper.h"
+#include "mftList.h"
 #include "boot_record.h"
 #include "globalVariable.h"
 
 void *readBoot(void *arg);
+void clean();
 
 #endif /* LOAD_H_ */
