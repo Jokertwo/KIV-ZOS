@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "boot_record.h"
 #include "mft_fragments.h"
 
 typedef struct mft_item {
@@ -29,6 +30,7 @@ typedef struct mft_list{
 	struct mft_list *next;
 }MFT_List;
 
+Mft_Item *position;
 
 
 #endif /* MFT_ITEM_H_ */

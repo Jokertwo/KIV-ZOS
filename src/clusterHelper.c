@@ -12,13 +12,13 @@ int getAdressOfCluster(int numberOfCluster);
 /**
  * vrati obsah daneho clusteru
  */
-char *getClusterContent(int startAdress) {
+char *getClusterContent(int clusterAdress) {
 	//alokoju si pamet pro obsah clusteru
 	char *content = calloc(boot->cluster_size, sizeof(char));
 
 	//najdu si adresu clusteru a
 	//posunu se na dany cluster
-	fseek(fp, startAdress, SEEK_SET);
+	fseek(fp, clusterAdress, SEEK_SET);
 
 	//prectu obsah clusteru
 	fread(content, boot->cluster_size, 1, fp);
@@ -26,24 +26,25 @@ char *getClusterContent(int startAdress) {
 	return content;
 }
 
-int addToCluster(char *contentToAdd, int numberOfCluster) {
+int addToCluster(char *contentToAdd, int clusterAdress) {
 	//alokoju si pamet pro obsah clusteru
 	char *content = calloc(boot->cluster_size, sizeof(char));
 
-	fseek(fp, getAdressOfCluster(numberOfCluster), SEEK_SET);
+	fseek(fp, clusterAdress, SEEK_SET);
 
 	//prectu obsah clusteru
 	fread(content, boot->cluster_size, 1, fp);
 
 	if((strlen(content) + strlen(contentToAdd)) < boot->cluster_size){
 		strcat(content,contentToAdd);
+		fseek(fp, clusterAdress, SEEK_SET);
 		fwrite(content,boot->cluster_size,1,fp);
 		free(content);
-		debugs("Do clusteru %d jsem pridal '%s'\n",numberOfCluster,contentToAdd);
+		debugs("Do clusteru s adresou %d jsem pridal '%s'\n",clusterAdress,contentToAdd);
 		return TRUE;
 	}
 	free(content);
-	debugs("Do clusteru %d se '%s' jiz nevejde.\n",numberOfCluster,contentToAdd);
+	debugs("Do clusteru s adresou %d se '%s' jiz nevejde.\n",clusterAdress,contentToAdd);
 	return FALSE;
 
 }

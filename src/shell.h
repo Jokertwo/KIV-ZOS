@@ -10,5 +10,9 @@
 
 #include "load.h"
 #include "clusterHelper.h"
+#include "bitMap.h"
+
+int ls(int UID);
+int mkdir(int UID, char *name);
 
 #endif /* SHELL_H_ */

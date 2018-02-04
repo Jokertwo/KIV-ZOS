@@ -11,13 +11,15 @@
 #include "load.h"
 #include "bitMap.h"
 
+int setRootPosition(void);
+
 void *readBoot(void *arg) {
 	//Mft_Item items[10];
 	printf("Nacitam testovaci soubor.\n");
 	//vytvorim strukturu a naplnim ji daty
 	boot = calloc(sizeof(boot_record), 1);
 
-	if ((fp = fopen("Test01.bin", "rb")) == NULL) {
+	if ((fp = fopen("Test01.bin", "rb+")) == NULL) {
 		//chyba pri otevirani souboru
 		printf("Chyba pri otevirani souboru \n");
 		return 0;
@@ -41,14 +43,25 @@ void *readBoot(void *arg) {
 
 	//nactu bitmapu
 	bitmap = calloc(boot->cluster_count / 8, sizeof(int8_t));
-	//jdu na zacatek bitmapys
+	//jdu na zacatek bitmapy
 	fseek(fp, boot->bitmap_start_address, SEEK_SET);
 	fread(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
-
-	return (int*) 1;
+	printList();
+	if(setRootPosition() == FALSE){
+		return (int*)FALSE;
+	}
+	return (int*)TRUE;
 }
 
-void clean() {
+int setRootPosition(void) {
+	if((position = getMftItemByUID(1,1)) == NULL){
+		debugs("Nenasel jsem ROOT slozku.\n");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void clean(void) {
 	//uvovlneni pameti
 	clearList();
 	free(bitmap);

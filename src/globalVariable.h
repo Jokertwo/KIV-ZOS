@@ -10,6 +10,7 @@
 #include <stdio.h>
 #define TRUE 1
 #define FALSE -1
+#define DELIMETER "#"
 
 #define FREE_ITEM 0
 int debug;

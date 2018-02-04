@@ -10,7 +10,7 @@
 
 #include "mft_item.h"
 #include "globalVariable.h"
-
+#include "bitMap.h"
 
 void *createTextFile(void *arg);
 void createFragment(Mft_Item *item, int i);

@@ -13,20 +13,61 @@ void printMftItem(Mft_Item *item);
 void deleteFirst(void);
 void relaseMemory(MFT_List *item);
 
-
 MFT_List *head = NULL;
+//v teto promene se bude udrzovat uid pro dalsi zaznam
+int32_t freeUID = 0;
+void updateUID(int32_t UID);
 
 /**
  * vlozi zaznam do listu
+
+ void push(Mft_Item *item) {
+ MFT_List *new = (MFT_List *) malloc(sizeof(MFT_List));
+ new->item = item;
+
+ pthread_rwlock_wrlock(&list_lock);
+ updateUID(new->item->uid);
+ new->next = head;
+ head = new;
+ pthread_rwlock_unlock(&list_lock);
+ }
  */
 void push(Mft_Item *item) {
+	MFT_List *temp;
 	MFT_List *new = (MFT_List *) malloc(sizeof(MFT_List));
 	new->item = item;
+	new->next = NULL;
+	updateUID(item->uid);
+	if (head == NULL) {
+		head = new;
+	} else {
+		temp = head;
+		while (temp->next != NULL) {
+			temp = temp->next;
+		}
+		temp->next = new;
+	}
 
-	pthread_rwlock_wrlock(&list_lock);
-	new->next = head;
-	head = new;
-	pthread_rwlock_unlock(&list_lock);
+}
+
+void writeMftToFile(void) {
+	debugs("Zapisuju mft tabulku do souboru\n");
+	int index = 0;
+	MFT_List *temp = head;
+	while (temp != NULL) {
+		fseek(fp, boot->mft_start_address + (index * sizeof(Mft_Item)),
+				SEEK_SET);
+		fwrite(temp->item, sizeof(Mft_Item), 1, fp);
+		index++;
+		temp = temp->next;
+	}
+
+}
+
+void updateUID(int32_t UID) {
+	if (freeUID <= UID) {
+		freeUID = UID + 2;
+	}
 }
 
 /**
@@ -54,8 +95,7 @@ void clearList() {
 
 /**
  * Rekne jestli je list prazdny nebo ne
- */
-bool isEmpty() {
+ */bool isEmpty() {
 	if (head != NULL) {
 		return false;
 	}
@@ -76,6 +116,11 @@ Mft_Item *getMftItemByUID(int32_t UID, int8_t itemOrder) {
 	debugs("V tabulce mft neexistuje zaznam s UID = %d\n",UID);
 	return NULL;
 }
+int getNewUID(void) {
+	int temp = freeUID;
+	updateUID(freeUID);
+	return temp;
+}
 
 /**
  * najde prvni volny zaznam
@@ -87,6 +132,7 @@ Mft_Item *getFreeMftItem() {
 			debugs("Nasel jsem volny zaznam MFT\n");
 			return temp->item;
 		}
+		temp = temp->next;
 	}
 	debugs("Tabulka MFT je plna\n");
 	return NULL;
@@ -106,7 +152,7 @@ void deleteFirst() {
 /**
  * Uvolni pamet jenoho zaznamu z listu
  */
-void relaseMemory(MFT_List *item){
+void relaseMemory(MFT_List *item) {
 	free(item->item);
 	free(item);
 }

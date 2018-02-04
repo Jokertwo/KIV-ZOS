@@ -25,25 +25,68 @@ int ls(int UID) {
 			char *content = getClusterContent(
 					item->fragments->fragment_start_address + (j
 							* item->fragments->fragment_start_address));
-			char *token = strtok(content, "\n");
+			char *token = strtok(content, DELIMETER);
 			while (token != NULL) {
 				Mft_Item *temp;
-				if ((temp = getMftItemByUID(atoi(token), 1)) == NULL) {
+				int uid = atoi(token);
+				if ((uid == FREE_ITEM) || ((temp = getMftItemByUID(uid, 1))
+						== NULL)) {
 					debugs("Nelze na jit zaznam pro UDI=%s, ulozene v clusteru na adrese=%d\n",token,(
 									item->fragments->fragment_start_address + (j
 											* item->fragments->fragment_start_address)));
 					return FALSE;
-				}
-				if (temp->isDirectory == true) {
-					printf("-%s\n", temp->item_name);
 				} else {
-					printf("+%s\n", temp->item_name);
+					if (temp->isDirectory == true) {
+						printf("-%s\n", temp->item_name);
+					} else {
+						printf("+%s\n", temp->item_name);
+					}
 				}
-				token = strtok(NULL, "\n");
+				token = strtok(NULL, DELIMETER);
 			}
 			free(content);
 		}
 		i++;
 	} while (item->item_order_total >= i);
+	return TRUE;
+}
+
+int mkdir(int UID, char *name) {
+	Mft_Item *newDir;
+	int bit;
+	char stringUID[12];
+	//ziskam volny zaznam v mft
+	if ((newDir = getFreeMftItem()) == NULL) {
+		debugs("Neni k dospozici zadny volny zaznam v MFT\n");
+		return FALSE;
+	}
+	//ziskam volny cluster/bit
+	if ((bit = getFreeBit(boot->cluster_count)) == FALSE) {
+		debugs("Neni k dispozice zadny volny cluster");
+		return FALSE;
+	}
+	//vytvorim mft_item
+	newDir->uid = getNewUID();
+	newDir->isDirectory = true;
+	strcpy(newDir->item_name, name);
+	newDir->backUid = UID;
+	newDir->item_order = 1;
+	newDir->item_order_total = 1;
+	newDir->item_size = 1;
+	newDir->fragments[0].fragment_count = 1;
+	int clusterAdress = boot->data_start_address + (boot->cluster_size * (bit - 1));
+	newDir->fragments[0].fragment_start_address = clusterAdress;
+
+	//najdu adresar do ktere pridavam zaznam/adresar
+	Mft_Item *parentFile = getMftItemByUID(UID,1);
+	sprintf(stringUID,"%d%s",newDir->uid,DELIMETER);
+	//zapisu do clusteru
+	addToCluster(stringUID,parentFile->fragments[0].fragment_start_address);
+	//zapisu do bitmapy
+	writeBit(bit);
+	writeToFile(boot->bitmap_start_address,boot->cluster_count);
+	//zapisu mft do souboru
+	writeMftToFile();
+
 	return TRUE;
 }

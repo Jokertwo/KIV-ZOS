@@ -10,7 +10,7 @@
 
 #include "boot_record.h"
 #include "createBootFile.h"
-#include "bitMap.h"
+
 
 int pocetMftItem = 10;
 
@@ -71,7 +71,7 @@ void *createTextFile(void *arg) {
 
 	//vytvorim cluster
 	char *cluster = calloc(boot->cluster_size, sizeof(char));
-	strcpy(cluster,"2\n");
+	strcpy(cluster,"2#");
 
 	//zapisu do souboru mft zaznam
 	fseek(fp, boot->mft_start_address, SEEK_SET);
@@ -79,7 +79,7 @@ void *createTextFile(void *arg) {
 
 	//zapisu do bitmapy
 	writeBit(1);
-	fseek(fp, boot->bitmap_start_address, SEEK_SET);
+	fseek(fp,boot->bitmap_start_address,SEEK_SET);
 	fwrite(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
 
 	//zapisu cluster
@@ -99,7 +99,7 @@ void *createTextFile(void *arg) {
 	//zapisu bitmapu
 	writeBit(2);
 	fseek(fp,boot->bitmap_start_address,SEEK_SET);
-	fwrite(bitmap,sizeof(int8_t),boot->cluster_count/8,fp);
+	fwrite(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
 	//zapisu cluster
 	fseek(fp,boot->data_start_address + boot->cluster_size,SEEK_SET);
 	fwrite(cluster2,boot->cluster_size,1,fp);

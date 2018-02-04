@@ -23,9 +23,11 @@ pthread_rwlock_t lock;
 
 #endif /* BITMAP_H_ */
 
-void printBits(int sizeOfBitmap,int8_t *bitmap2);
+void printBits(int sizeOfBitmap, int8_t *bitmap2);
 void disposeBitMap(void);
 int writeBit(int bit);
 int deleteBit(int bit);
 int checkIfIsFree(int bit);
 int createBitMap(int numberOfClusters);
+void writeToFile(int bitmapStartAdress,int clusterCount);
+int getFreeBit(int countOfClusters);

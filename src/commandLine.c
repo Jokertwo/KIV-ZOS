@@ -32,7 +32,11 @@ void *commandLine(void *args) {
 int functions(char *command) {
 
 	if (strcmp(command, "ls") == 0) {
-		ls(1);
+		ls(position->uid);
+		return TRUE;
+	}
+	if (strcmp(command, "mkdir") == 0) {
+		mkdir(position->uid,strtok(NULL," "));
 		return TRUE;
 	}
 	if (strcmp(command, "-") == 0) {
