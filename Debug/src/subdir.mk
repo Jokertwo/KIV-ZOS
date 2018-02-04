@@ -11,7 +11,9 @@ C_SRCS += \
 ../src/createBootFile.c \
 ../src/load.c \
 ../src/mftList.c \
-../src/shell.c 
+../src/pwdList.c \
+../src/shell.c \
+../src/shellHelp.c 
 
 OBJS += \
 ./src/ZOS.o \
@@ -21,7 +23,9 @@ OBJS += \
 ./src/createBootFile.o \
 ./src/load.o \
 ./src/mftList.o \
-./src/shell.o 
+./src/pwdList.o \
+./src/shell.o \
+./src/shellHelp.o 
 
 C_DEPS += \
 ./src/ZOS.d \
@@ -31,7 +35,9 @@ C_DEPS += \
 ./src/createBootFile.d \
 ./src/load.d \
 ./src/mftList.d \
-./src/shell.d 
+./src/pwdList.d \
+./src/shell.d \
+./src/shellHelp.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

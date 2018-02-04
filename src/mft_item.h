@@ -31,6 +31,7 @@ typedef struct mft_list{
 }MFT_List;
 
 Mft_Item *position;
+Mft_Item *root;
 
 
 #endif /* MFT_ITEM_H_ */

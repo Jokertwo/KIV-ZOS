@@ -39,9 +39,20 @@ int functions(char *command) {
 		mkdir(position->uid,strtok(NULL," "));
 		return TRUE;
 	}
+	if(strcmp(command, "cd") == 0){
+		if(cd(strtok(NULL, " ")) == FALSE){
+			printf("PATH NOT FOUND (neexistujici cesta)");
+			return FALSE;
+		}
+		return TRUE;
+	}
 	if (strcmp(command, "-") == 0) {
 		debugs("Konec");
 		return END;
+	}
+	if(strcmp(command, "pwd") == 0){
+		pwd();
+		return TRUE;
 	}
 	if (strcmp(command, "help") == 0) {
 		printHelp();

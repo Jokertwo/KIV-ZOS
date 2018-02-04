@@ -19,6 +19,7 @@ void clearList(void);
 bool isEmpty();
 void push(Mft_Item *item);
 Mft_Item *getMftItemByUID(int32_t UID,int8_t itemOrder);
+Mft_Item *getMftItemByName(char *itemName,int8_t itemOrder);
 Mft_Item *getFreeMftItem();
 int getNewUID(void);
 void writeMftToFile(void);

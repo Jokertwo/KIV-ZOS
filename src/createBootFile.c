@@ -65,13 +65,13 @@ void *createTextFile(void *arg) {
 	////////////////////// korenovy adresar//////////////////
 
 	//vytvorim a zapisu korenovy adresar
-	Mft_Item *root = createItem(1, 1, 1, 1, "ROOT", 1, 1);
+	Mft_Item *root = createItem(ROOT, 1, 1, 1, "ROOT", 1, ROOT_BACK_UID);
 	root->fragments[0].fragment_count = 1;
 	root->fragments[0].fragment_start_address = boot->data_start_address;
 
 	//vytvorim cluster
-	char *cluster = calloc(boot->cluster_size, sizeof(char));
-	strcpy(cluster,"2#");
+	//char *cluster = calloc(boot->cluster_size, sizeof(char));
+	//strcpy(cluster,"2#");
 
 	//zapisu do souboru mft zaznam
 	fseek(fp, boot->mft_start_address, SEEK_SET);
@@ -83,12 +83,12 @@ void *createTextFile(void *arg) {
 	fwrite(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
 
 	//zapisu cluster
-	fseek(fp, boot->data_start_address, SEEK_SET);
-	fwrite(cluster, 2, 1, fp);
+	//fseek(fp, boot->data_start_address, SEEK_SET);
+	//fwrite(cluster, 2, 1, fp);
 
 	////////////////////////// slozka v korenovem adresari//////////////////////
-
-	Mft_Item *file = createItem(2,true,1,1,"New File",1,1);
+/**
+	Mft_Item *file = createItem(2,true,1,1,"File",1,1);
 	file->fragments[0].fragment_count = 1;
 	file->fragments[1].fragment_start_address = boot->data_start_address + boot->cluster_size;
 	char *cluster2 = calloc(boot->cluster_size,sizeof(char));
@@ -103,14 +103,14 @@ void *createTextFile(void *arg) {
 	//zapisu cluster
 	fseek(fp,boot->data_start_address + boot->cluster_size,SEEK_SET);
 	fwrite(cluster2,boot->cluster_size,1,fp);
-
+	free(cluster2);
+	free(file);
+*/
 	//uvolnim pamet
 	free(bitmap);
 	free(boot);
-	free(cluster);
+	//free(cluster);
 	free(root);
-	free(cluster2);
-	free(file);
 
 	//zavru soubor
 	fclose(fp);

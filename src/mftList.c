@@ -8,6 +8,7 @@
 #include "mftList.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 void printMftItem(Mft_Item *item);
 void deleteFirst(void);
@@ -17,6 +18,7 @@ MFT_List *head = NULL;
 //v teto promene se bude udrzovat uid pro dalsi zaznam
 int32_t freeUID = 0;
 void updateUID(int32_t UID);
+void setRoot(Mft_Item *item);
 
 /**
  * vlozi zaznam do listu
@@ -38,6 +40,7 @@ void push(Mft_Item *item) {
 	new->item = item;
 	new->next = NULL;
 	updateUID(item->uid);
+	setRoot(item);
 	if (head == NULL) {
 		head = new;
 	} else {
@@ -49,9 +52,15 @@ void push(Mft_Item *item) {
 	}
 
 }
+void setRoot(Mft_Item *item) {
+	if (item->uid == ROOT && item->backUid == ROOT_BACK_UID && item->isDirectory
+			== true) {
+		root = item;
+	}
+}
 
 void writeMftToFile(void) {
-	debugs("Zapisuju mft tabulku do souboru\n");
+	debugs("writeMftToFile: Zapisuju mft tabulku do souboru\n");
 	int index = 0;
 	MFT_List *temp = head;
 	while (temp != NULL) {
@@ -101,19 +110,37 @@ void clearList() {
 	}
 	return true;
 }
+Mft_Item *getMftItemByName(char *itemName, int8_t itemOrder) {
+	MFT_List *temp = head;
+	while (temp != NULL) {
+		if (strcmp(temp->item->item_name, itemName) == 0) {
+			if (temp->item->item_order == itemOrder) {
+				debugs("getMftItemByName: Nasel jsem mft item se jmenen '%s' a itemOrder: %d\n",itemName,itemOrder);
+				return temp->item;
+			}
+		}
+		temp = temp->next;
+	}
+	debugs("getMftItemByName: Nenasel jsem mft item se jmenen '%s' a itemOrder: %d\n",itemName,itemOrder);
+	return NULL;
+}
+
 /**
  * Najde zaznam podle UID
  */
 Mft_Item *getMftItemByUID(int32_t UID, int8_t itemOrder) {
+	if(UID == ROOT_BACK_UID){
+		return root;
+	}
 	MFT_List *temp = head;
 	while (temp != NULL) {
 		if (temp->item->uid == UID && temp->item->item_order) {
-			debugs("Nasel jsem zaznam v tabulce pro UID = %d\n",UID);
+			debugs("getMftItemByUID: Nasel jsem zaznam v tabulce pro UID = %d\n",UID);
 			return temp->item;
 		}
 		temp = temp->next;
 	}
-	debugs("V tabulce mft neexistuje zaznam s UID = %d\n",UID);
+	debugs("getMftItemByUID: V tabulce mft neexistuje zaznam s UID = %d\n",UID);
 	return NULL;
 }
 int getNewUID(void) {
@@ -129,12 +156,12 @@ Mft_Item *getFreeMftItem() {
 	MFT_List *temp = head;
 	while (temp != NULL) {
 		if (temp->item->uid == FREE_ITEM) {
-			debugs("Nasel jsem volny zaznam MFT\n");
+			debugs("getFreeMftItem: Nasel jsem volny zaznam MFT\n");
 			return temp->item;
 		}
 		temp = temp->next;
 	}
-	debugs("Tabulka MFT je plna\n");
+	debugs("getFreeMftItem: Tabulka MFT je plna\n");
 	return NULL;
 }
 /**

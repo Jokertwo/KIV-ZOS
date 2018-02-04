@@ -14,5 +14,9 @@
 
 int ls(int UID);
 int mkdir(int UID, char *name);
+int pwd(void);
+int cd(char *path);
+
+Mft_Item *parsePath(char *path);
 
 #endif /* SHELL_H_ */
