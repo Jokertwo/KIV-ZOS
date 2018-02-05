@@ -12,7 +12,7 @@
 #include "clusterHelper.h"
 #include "bitMap.h"
 
-int ls(int UID);
+int ls(Mft_Item *item);
 int mkdir(int UID, char *name);
 int pwd(void);
 int cd(char *path);

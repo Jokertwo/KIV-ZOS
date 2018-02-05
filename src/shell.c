@@ -8,25 +8,26 @@
 #include "shell.h"
 #include "pwdList.h"
 
-int ls(int UID) {
-	Mft_Item *item;
+int ls(Mft_Item *item) {
 	int i = 1;
 	do {
-		if ((item = getMftItemByUID(UID, i)) == NULL) {
-			debugs("ls: Nemohl jsem nalezt zaznam v tabulce s UID = %d\n",UID);
-			return FALSE;
-		}
-
+		//kontrola jestli je to slozka
 		if (item->isDirectory == false) {
 			debugs("ls: Operaci 'ls' lze volat jen na adresarem\n");
 			return FALSE;
 		}
-
-		for (int j = 0; j < item->fragments->fragment_count; j++) {
+		//projdu vsechny fragmenty (pravdepodobne slozka nikdy nebude na vice fragmentech ale co)
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			if (item->fragments[j].fragment_start_address == 0) {
+				continue;
+			}
+			//ziskam obsah bloku clusteru
 			char *content = getClusterContent(
-					item->fragments->fragment_start_address + (j
-							* item->fragments->fragment_start_address));
+					item->fragments[j].fragment_start_address,
+					item->fragments[j].fragment_count);
+			//jednotliva UID jsou od sebe oddelena pomoci #
 			char *token = strtok(content, DELIMETER);
+			//pro kazde si vzhledam mft zaznam a zpracuji ho
 			while (token != NULL) {
 				Mft_Item *temp;
 				int uid = atoi(token);
@@ -45,16 +46,24 @@ int ls(int UID) {
 				}
 				token = strtok(NULL, DELIMETER);
 			}
+			//nakonec uvolnim blok clusteru a nactu si dalsi(v dalsi iteraci)
 			free(content);
 		}
 		i++;
+		//v pripade ze by slozka byla nejen ve vice fragmentech ale i ve vice mft itemech
+		if (item->item_order_total > 1) {
+			if ((item = getMftItemByUID(item->uid, i)) == NULL) {
+				debugs("ls: Nepovedlo se najit zaznam v mft tabulce s item_order %d",i)
+				return FALSE;
+			}
+		}
 	} while (item->item_order_total >= i);
 	return TRUE;
 }
 
-int cd(char *path){
+int cd(char *path) {
 	Mft_Item *temp;
-	if((temp = parsePath(path)) == NULL){
+	if ((temp = parsePath(path)) == NULL) {
 		return FALSE;
 	}
 	position = temp;

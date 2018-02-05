@@ -10,18 +10,18 @@
 int getAdressOfCluster(int numberOfCluster);
 
 /**
- * vrati obsah daneho clusteru
+ * vrati obsah daneho bloku clusteru
  */
-char *getClusterContent(int clusterAdress) {
+char *getClusterContent(int clusterAdress,int countOfClusters) {
 	//alokoju si pamet pro obsah clusteru
-	char *content = calloc(boot->cluster_size, sizeof(char));
+	char *content = calloc(boot->cluster_size*countOfClusters, sizeof(char));
 
 	//najdu si adresu clusteru a
 	//posunu se na dany cluster
 	fseek(fp, clusterAdress, SEEK_SET);
 
 	//prectu obsah clusteru
-	fread(content, boot->cluster_size, 1, fp);
+	fread(content, boot->cluster_size, countOfClusters, fp);
 
 	return content;
 }

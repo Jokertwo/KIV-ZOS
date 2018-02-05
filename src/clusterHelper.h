@@ -13,7 +13,7 @@
 
 #include "load.h"
 
-char *getClusterContent(int clusterAdress);
+char *getClusterContent(int clusterAdress,int countOfClusters);
 void deleteCluster(int clusterAdress);
 int addToCluster(char *contentToAdd, int clusterAdress);
 
