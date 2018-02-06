@@ -134,13 +134,13 @@ Mft_Item *getMftItemByUID(int32_t UID, int8_t itemOrder) {
 	}
 	MFT_List *temp = head;
 	while (temp != NULL) {
-		if (temp->item->uid == UID && temp->item->item_order) {
+		if (temp->item->uid == UID && temp->item->item_order == itemOrder) {
 			debugs("getMftItemByUID: Nasel jsem zaznam v tabulce pro UID = %d\n",UID);
 			return temp->item;
 		}
 		temp = temp->next;
 	}
-	debugs("getMftItemByUID: V tabulce mft neexistuje zaznam s UID = %d\n",UID);
+	debugs("getMftItemByUID: V tabulce mft neexistuje zaznam s UID = %d a itemOrder = %d\n",UID,itemOrder);
 	return NULL;
 }
 int getNewUID(void) {

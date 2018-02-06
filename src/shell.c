@@ -18,7 +18,7 @@ int ls(Mft_Item *item) {
 		}
 		//projdu vsechny fragmenty (pravdepodobne slozka nikdy nebude na vice fragmentech ale co)
 		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
-			if (item->fragments[j].fragment_start_address == 0) {
+			if (item->fragments[j].fragment_start_address == VOID) {
 				continue;
 			}
 			//ziskam obsah bloku clusteru
@@ -93,26 +93,55 @@ int pwd(void) {
 	return FALSE;
 
 }
+int rmdir(Mft_Item *dir) {
+	if (isDirEmpty(dir) == FALSE) {
+		return FALSE;
+	}
+	if (removeDir(dir, getMftItemByUID(dir->backUid, 1)) == TRUE) {
+		//delete bitmap
+		for (int i = 0; i < MAX_FRAGMENT_COUNT; i++) {
+			for (int j = 0; j < dir->fragments[i].fragment_count; j++) {
+				int bit = ((dir->fragments[i].fragment_start_address + (j
+						* boot->cluster_size)) - boot->bitmap_start_address)
+						/ boot->cluster_size;
+				bit++;
+				deleteBit(bit);
 
-int mkdir(int UID, char *name) {
+			}
+		}
+		nullMftItem(dir);
+		writeChangeToFile();
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+int mkdir(Mft_Item *parentDir, char *name) {
 	Mft_Item *newDir;
 	int bit;
 	char stringUID[12];
+	//overim jestli parentDir
+	//zjistim jestli slozka uz slozku s timto nazvem neobsahuje
+	if (dirContains(parentDir, name) != NULL) {
+		printf("EXIST (nelze zalozit, jiz existuje\n");
+		return FALSE;
+	}
 	//ziskam volny zaznam v mft
 	if ((newDir = getFreeMftItem()) == NULL) {
-		debugs("mkdir: Neni k dospozici zadny volny zaznam v MFT\n");
+		printf("NO FREE MFT_ITEM (zadny volny mft zaznam)\n");
 		return FALSE;
 	}
 	//ziskam volny cluster/bit
 	if ((bit = getFreeBit(boot->cluster_count)) == FALSE) {
-		debugs("mkdir: Neni k dispozice zadny volny cluster");
+		printf("NO LEFT SPACE ON DISK (na disku neni zadne volne misto)");
 		return FALSE;
 	}
 	//vytvorim mft_item
 	newDir->uid = getNewUID();
 	newDir->isDirectory = true;
 	strcpy(newDir->item_name, name);
-	newDir->backUid = UID;
+	newDir->backUid = parentDir->uid;
 	newDir->item_order = 1;
 	newDir->item_order_total = 1;
 	newDir->item_size = 1;
@@ -121,16 +150,14 @@ int mkdir(int UID, char *name) {
 			- 1));
 	newDir->fragments[0].fragment_start_address = clusterAdress;
 
-	//najdu adresar do ktere pridavam zaznam/adresar
-	Mft_Item *parentFile = getMftItemByUID(UID, 1);
+	memset(stringUID, 0, 12);
 	sprintf(stringUID, "%d%s", newDir->uid, DELIMETER);
 	//zapisu do clusteru
-	addToCluster(stringUID, parentFile->fragments[0].fragment_start_address);
+	addToCluster(stringUID, parentDir->fragments[0].fragment_start_address);
 	//zapisu do bitmapy
 	writeBit(bit);
-	writeToFile(boot->bitmap_start_address, boot->cluster_count);
-	//zapisu mft do souboru
-	writeMftToFile();
+	writeChangeToFile();
 
 	return TRUE;
 }
+

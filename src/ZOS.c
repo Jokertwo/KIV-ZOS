@@ -24,7 +24,7 @@ int main(void) {
 	debug = 1;
 	pthread_t b;
 
-	//create(b);
+	create(b);
 	load(b);
 	(void) signal(SIGINT, end);
 	pthread_create(&b, NULL, commandLine, NULL);

@@ -17,6 +17,8 @@
 #define ROOT 1
 #define ROOT_BACK_UID -111
 
+#define VOID -999
+
 
 int debug;
 #define debugs(args ...) if(debug) fprintf(stderr,args);

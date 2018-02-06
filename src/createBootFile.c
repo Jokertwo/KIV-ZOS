@@ -88,6 +88,7 @@ void *createTextFile(void *arg) {
 	free(bitmap);
 	free(boot);
 	free(root);
+	free(cluster);
 
 	//zavru soubor
 	fclose(fp);
@@ -114,7 +115,7 @@ Mft_Item *createItem(int32_t UID, bool isDirectory, int8_t itemOrder,
 void createFragment(Mft_Item *item, int i) {
 
 	item->fragments[i].fragment_count = 0;
-	item->fragments[i].fragment_start_address = 0;
+	item->fragments[i].fragment_start_address = VOID;
 
 }
 

@@ -22,7 +22,7 @@ typedef struct mft_item {
 	char item_name[12]; //8+3 + /0 C/C++ ukoncovaci string znak
 	int32_t item_size; //velikost souboru v bytech
 	int32_t backUid;
-	struct mft_fragment fragments[32]; //fragmenty souboru
+	struct mft_fragment fragments[MAX_FRAGMENT_COUNT]; //fragmenty souboru
 }Mft_Item;
 
 typedef struct mft_list{
