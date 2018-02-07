@@ -17,7 +17,7 @@
 #define ROOT 1
 #define ROOT_BACK_UID -111
 
-#define VOID -999
+#define VOID -100
 
 
 int debug;

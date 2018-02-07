@@ -31,3 +31,6 @@ int checkIfIsFree(int bit);
 int createBitMap(int numberOfClusters);
 void writeToFile(int bitmapStartAdress,int clusterCount);
 int getFreeBit(int countOfClusters);
+int getFreeBitFrom(int startBit, int countOfClusters);
+int *getFreeBlocBits(int countOfBits, int countOfClusters);
+int *getFreeBits(int countOfBits, int countOfCluster);

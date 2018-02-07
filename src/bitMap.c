@@ -10,7 +10,6 @@
 #include <pthread.h>
 #include "bitMap.h"
 
-
 /**
  * vytvori bitmapu
  */
@@ -35,15 +34,15 @@ void disposeBitMap(void) {
 /**
  * zapise bitmapu do souboru
  */
-void writeToFile(int bitmapStartAdress,int clusterCount){
-	fseek(fp,bitmapStartAdress,SEEK_SET);
+void writeToFile(int bitmapStartAdress, int clusterCount) {
+	fseek(fp, bitmapStartAdress, SEEK_SET);
 	fwrite(bitmap, sizeof(int8_t), clusterCount / 8, fp);
 }
 
 /**
  * vytiskne bitove pole
  */
-void printBits(int sizeOfBitmap,int8_t *bitmap2) {
+void printBits(int sizeOfBitmap, int8_t *bitmap2) {
 	for (int i = 0; i < sizeOfBitmap; i++) {
 		unsigned char *b = (unsigned char*) &bitmap2[i];
 		unsigned char byte;
@@ -93,13 +92,72 @@ int deleteBit(int bit) {
 	return TRUE;
 }
 /**
+ * vrati pole s volnymi bity
+ */
+int *getFreeBits(int countOfBits, int countOfCluster) {
+	int bit = 0;
+	int *bits;
+	bits = calloc(countOfBits, sizeof(int));
+	for (int i = 0; i < countOfBits; i++) {
+		bit = getFreeBitFrom(bit, countOfCluster);
+		//pokud neni dostatek volnych bitu vrat NULL
+		if (bit == FALSE) {
+			free(bits);
+			return NULL;
+		}
+		*(bits + i) = bit;
+	}
+	return bits;
+}
+
+/**
+ * Vrati souvisly blok bitu
+ */
+int *getFreeBlocBits(int countOfBits, int countOfClusters) {
+	int bit;
+	int *bits;
+	//pokud chci jen jeden bit vratim prvni volny
+	if (countOfBits == 1) {
+		bits = calloc(countOfBits, sizeof(int));
+		*bits = getFreeBit(countOfClusters);
+		return NULL;
+	}
+	//pokusim se najit souvisly blok jinak vracim NULL
+	for (int h = 1; h <= countOfClusters; h++) {
+		bit = getFreeBitFrom(h, countOfClusters);
+		if (bit == FALSE) {
+			break;
+		}
+		for (int i = 1; i < countOfBits; i++) {
+
+			if (checkIfIsFree(bit + i) == FALSE) {
+				h = bit + i;
+				break;
+			}
+			//nasel jsem souvisly blok
+			if ((i + 1) == countOfBits) {
+				//naplnim navratove pole
+				for (int j = 0; j < countOfBits; j++) {
+					bits = calloc(countOfBits, sizeof(int));
+					*(bits + j) = bit + j;
+					return bits;
+				}
+			}
+		}
+	}
+	//nenasel jsem souvisly blok
+	return NULL;
+}
+/**
  * vraci cislo volneho bitu
  */
-int getFreeBit(int countOfClusters){
-	int i;
-	for(i = 1; i <= countOfClusters; i++){
-		if(checkIfIsFree(i) == TRUE){
-			return i;
+int getFreeBit(int countOfClusters) {
+	return getFreeBitFrom(1, countOfClusters);
+}
+int getFreeBitFrom(int startBit, int countOfClusters) {
+	for (; startBit <= countOfClusters; startBit++) {
+		if (checkIfIsFree(startBit) == TRUE) {
+			return startBit;
 		}
 	}
 	return FALSE;

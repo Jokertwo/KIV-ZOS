@@ -12,9 +12,9 @@ int getAdressOfCluster(int numberOfCluster);
 /**
  * vrati obsah daneho bloku clusteru
  */
-char *getClusterContent(int clusterAdress,int countOfClusters) {
+char *getClusterContent(int clusterAdress, int countOfClusters) {
 	//alokoju si pamet pro obsah clusteru
-	char *content = calloc(boot->cluster_size*countOfClusters, sizeof(char));
+	char *content = calloc(boot->cluster_size * countOfClusters, sizeof(char));
 
 	//najdu si adresu clusteru a
 	//posunu se na dany cluster
@@ -35,10 +35,10 @@ int addToCluster(char *contentToAdd, int clusterAdress) {
 	//prectu obsah clusteru
 	fread(content, boot->cluster_size, 1, fp);
 
-	if((strlen(content) + strlen(contentToAdd)) < boot->cluster_size){
-		strcat(content,contentToAdd);
+	if ((strlen(content) + strlen(contentToAdd)) < boot->cluster_size) {
+		strcat(content, contentToAdd);
 		fseek(fp, clusterAdress, SEEK_SET);
-		fwrite(content,boot->cluster_size,1,fp);
+		fwrite(content, boot->cluster_size, 1, fp);
 		free(content);
 		debugs("Do clusteru s adresou %d jsem pridal '%s'\n",clusterAdress,contentToAdd);
 		return TRUE;
@@ -68,4 +68,5 @@ int getAdressOfCluster(int numberOfCluster) {
 	return boot->data_start_address + ((numberOfCluster - 1)
 			* boot->cluster_size);
 }
+
 

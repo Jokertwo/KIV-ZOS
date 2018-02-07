@@ -242,10 +242,38 @@ void nullMftItem(Mft_Item *item) {
 		item->fragments[i].fragment_start_address = VOID;
 	}
 }
+int updateSize(Mft_Item *startItem, bool upOrDown) {
+	Mft_Item *temp;
+	int size;
+	if (startItem->backUid == ROOT_BACK_UID) {
+		debugs("updateSize: Argumentem nemuze byt root");
+		return FALSE;
+	}
+	size = startItem->item_size;
+	temp = getMftItemByUID(startItem->backUid, 1);
+
+	while (temp->backUid != ROOT_BACK_UID) {
+		temp->item_size = upOrDown ? temp->item_size + size : temp->item_size
+				- size;
+		startItem = temp;
+		temp = getMftItemByUID(temp->backUid, 1);
+	}
+	//upravim velikost u rootu
+	temp->item_size = upOrDown ? temp->item_size + size : temp->item_size
+			- size;
+	return TRUE;
+
+}
 void writeChangeToFile() {
 	writeToFile(boot->bitmap_start_address, boot->cluster_count);
 	//zapisu mft do souboru
 	writeMftToFile();
+}
+/**
+ * vztiskne info o jednom mft_Itemu
+ */
+void printInfoAboutMftItem(Mft_Item *item) {
+	printf("%s - %d - %d \n", item->item_name, item->uid, item->item_size);
 }
 
 void freePaths(int deep, char **paths) {
@@ -255,4 +283,48 @@ void freePaths(int deep, char **paths) {
 	}
 	free(paths);
 }
-
+/**
+ * zjisti pocet bloku
+ */
+int getNumberOfBitBlocks(int *bits, int sizeOfArray) {
+	int *tempBits = bits;
+	int count = 0;
+	int index = 0;
+	int size;
+	while (index < sizeOfArray) {
+		count++;
+		size = getSizeOfBitBlock(tempBits, sizeOfArray - index);
+		index += size;
+		if (index < sizeOfArray) {
+			tempBits = tempBits + size;
+		}
+	}
+	return count;
+}
+/**
+ * zjisti kolik bitu jde postupne zasebou
+ */
+int getSizeOfBitBlock(int *bits, int sizeOfArray) {
+	int *temp = bits;
+	for (int i = 0; i < (sizeOfArray - 1); i++) {
+		if (*(temp) != (*(temp + 1) - 1)) {
+			return i + 1;
+		}
+		temp++;
+	}
+	return sizeOfArray;
+}
+/**
+ * vraci pocet potrebnych clusteru pro ulozeni souboru
+ * o zadane velikosti
+ */
+int getNumberOfClusters(int fileSize) {
+	if ((fileSize % boot->cluster_size) == 0)
+		return fileSize / boot->cluster_size;
+	return (fileSize / boot->cluster_size) + 1;
+}
+int intLeng(int n) {
+	if (n < 10)
+		return 1;
+	return  1 + intLeng(n / 10);
+}

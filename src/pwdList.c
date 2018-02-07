@@ -22,7 +22,6 @@ void printPwdList(void) {
 		printf("/%s", temp->name);
 		temp = temp->next;
 	}
-	printf("\n");
 }
 bool isPwdListEmpty() {
 	if (headPwd == NULL) {

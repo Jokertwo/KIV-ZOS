@@ -39,9 +39,9 @@ int ls(Mft_Item *item) {
 					return FALSE;
 				} else {
 					if (temp->isDirectory == true) {
-						printf("-%s\n", temp->item_name);
-					} else {
 						printf("+%s\n", temp->item_name);
+					} else {
+						printf("-%s\n", temp->item_name);
 					}
 				}
 				token = strtok(NULL, DELIMETER);
@@ -68,6 +68,113 @@ int cd(char *path) {
 	}
 	position = temp;
 	return TRUE;
+}
+int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
+	int fileSize;
+	int numberOfClusters;
+	int *bits;
+	char *buffer;
+	Mft_Item *new;
+	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
+	if (dirContains(item, nameOfFile) != NULL) {
+		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
+				nameOfFile, item->item_name);
+		return FALSE;
+	}
+	if (item->isDirectory != true) {
+		debugs("incp: Cilova slozka neni slozkou\n");
+		printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
+		return FALSE;
+	}
+	//zjistim si velikost souboru
+	fseek(file, 0, SEEK_END);
+	fileSize = ftell(file);
+	rewind(file);
+	//zjistim kolik budu potrebovat clusteru a podle toho si reknu o bity
+	numberOfClusters = getNumberOfClusters(fileSize);
+	if ((bits = getFreeBits(numberOfClusters, boot->cluster_count)) == NULL) {
+		debugs("incp: Nedostatek volneho mista\n");
+		return FALSE;
+	}
+
+	//podle rozlozeni bitu si zjistim kolik budu potrebovat fragmentu -->mft_itemu
+	int countOfFragments = getNumberOfBitBlocks(bits, numberOfClusters);
+
+	int countOfMftItems = (countOfFragments / MAX_FRAGMENT_COUNT)
+			+ (countOfFragments % MAX_FRAGMENT_COUNT);
+
+	int UID = getNewUID();
+	int *tempBits = bits;
+	int index = 0;
+
+	//vytvorim mft_zaznamy
+	for (int i = 0; i < countOfMftItems; i++) {
+		if ((new = getFreeMftItem()) == NULL) {
+			debugs("incp: Neni volny zadny mft zaznam\n");
+			free(bits);
+			return FALSE;
+		}
+		new->uid = UID;
+		strncpy(new->item_name, nameOfFile, 11);
+		new->backUid = item->uid;
+		new->item_size = fileSize;
+		new->item_order = i + 1;
+		new->item_order_total = countOfMftItems;
+		new->isDirectory = false;
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			new->fragments[j].fragment_start_address = boot->data_start_address
+					+ ((*tempBits - 1) * boot->cluster_size);
+			new->fragments[j].fragment_count = getSizeOfBitBlock(tempBits,
+					numberOfClusters - index);
+			index += new->fragments[j].fragment_count;
+			if (index < numberOfClusters) {
+				tempBits = tempBits + new->fragments[j].fragment_count;
+			} else {
+				break;
+			}
+		}
+	}
+
+	fseek(file, 0, SEEK_CUR);
+	//pokud se povedlo vytvorit MFT zaznamy, zacnu zapisovat do souboru
+	//tohle neni idealni (operace hledani je dost draha)
+	for (int i = 1; i <= countOfMftItems; i++) {
+		Mft_Item *item = getMftItemByUID(UID, i);
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			if (item->fragments[j].fragment_count == 0) {
+				break;
+			}
+			//nactu ze souboru
+			buffer = calloc(boot->cluster_size,
+					item->fragments[j].fragment_count);
+			fread(buffer, boot->cluster_size,
+					item->fragments[j].fragment_count, file);
+			//zapisu do sveho
+			fseek(fp, item->fragments[j].fragment_start_address, SEEK_SET);
+			fwrite(buffer, boot->cluster_count,
+					item->fragments[j].fragment_count, fp);
+			//uvolnim buffer
+			free(buffer);
+		}
+
+	}
+	//zapisu zmeny do bitmapy
+	for (int i = 0; i < numberOfClusters; i++) {
+		writeBit(*(bits + i));
+	}
+	free(bits);
+	//zapisu soubor do nadrazene slozky
+	char *sUID = calloc(intLeng(new->uid)+2,sizeof(char));
+	sprintf(sUID,"%d#",new->uid);
+	addToCluster(sUID,item->fragments[0].fragment_start_address);
+	free(sUID);
+	//updatuji velikost u nadrazenych slozek
+	updateSize(new, true);
+	//za[isu bitmapu a mft do souboru
+	writeChangeToFile();
+	fclose(file);
+	return TRUE;
+
 }
 
 int pwd(void) {
@@ -109,6 +216,7 @@ int rmdir(Mft_Item *dir) {
 
 			}
 		}
+		updateSize(dir, false);
 		nullMftItem(dir);
 		writeChangeToFile();
 		return TRUE;
@@ -144,7 +252,7 @@ int mkdir(Mft_Item *parentDir, char *name) {
 	newDir->backUid = parentDir->uid;
 	newDir->item_order = 1;
 	newDir->item_order_total = 1;
-	newDir->item_size = 1;
+	newDir->item_size = intLeng(newDir->uid) + 1;
 	newDir->fragments[0].fragment_count = 1;
 	int clusterAdress = boot->data_start_address + (boot->cluster_size * (bit
 			- 1));
@@ -156,6 +264,9 @@ int mkdir(Mft_Item *parentDir, char *name) {
 	addToCluster(stringUID, parentDir->fragments[0].fragment_start_address);
 	//zapisu do bitmapy
 	writeBit(bit);
+	//upravim velikost
+	updateSize(newDir, true);
+	//za[isu bitmapu a mft do souboru
 	writeChangeToFile();
 
 	return TRUE;
