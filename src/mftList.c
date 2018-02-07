@@ -53,8 +53,8 @@ void push(Mft_Item *item) {
 
 }
 void setRoot(Mft_Item *item) {
-	if (item->uid == ROOT && item->backUid == ROOT_BACK_UID && item->isDirectory
-			== true) {
+	if (item->uid == ROOT && item->backUid == ROOT_BACK_UID
+			&& item->isDirectory == true) {
 		root = item;
 	}
 }
@@ -71,6 +71,21 @@ void writeMftToFile(void) {
 		temp = temp->next;
 	}
 
+}
+void reloadMftFromFile(void) {
+	//vymazu si seznam a nactu si ho znova
+	clearList();
+	//zjistim si pocet zaznamu
+	int a = boot->bitmap_start_address - boot->mft_start_address;
+	a = a / sizeof(Mft_Item);
+
+	//postupne je pojednom nactu
+	for (int i = 0; i < a; i++) {
+		fseek(fp, boot->mft_start_address + (sizeof(Mft_Item) * i), SEEK_SET);
+		Mft_Item *item = (Mft_Item *) malloc(sizeof(Mft_Item));
+		fread(item, sizeof(Mft_Item), 1, fp);
+		push(item);
+	}
 }
 
 void updateUID(int32_t UID) {
@@ -129,7 +144,7 @@ Mft_Item *getMftItemByName(char *itemName, int8_t itemOrder) {
  * Najde zaznam podle UID
  */
 Mft_Item *getMftItemByUID(int32_t UID, int8_t itemOrder) {
-	if(UID == ROOT_BACK_UID){
+	if (UID == ROOT_BACK_UID) {
 		return root;
 	}
 	MFT_List *temp = head;
@@ -188,8 +203,17 @@ void relaseMemory(MFT_List *item) {
  * vytiskne jeden mft_item
  */
 void printMftItem(Mft_Item *item) {
+	printf("------\n");
 	printf("UID %d\n", item->uid);
 	printf("isDirectory %d\n", item->isDirectory);
 	printf("itemOrder %d\n", item->item_order);
+	printf("itemTotalOrder %d\n", item->item_order_total);
 	printf("itemName %s\n", item->item_name);
+	printf("itemSize %d\n", item->item_size);
+	for (int i = 0; i < MAX_FRAGMENT_COUNT; i++) {
+		printf("FragmentCount %d\n", item->fragments[i].fragment_count);
+		printf("ClusterStartAdress %d\n",
+				item->fragments[i].fragment_start_address);
+	}
+	printf("------\n");
 }

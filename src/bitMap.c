@@ -95,7 +95,7 @@ int deleteBit(int bit) {
  * vrati pole s volnymi bity
  */
 int *getFreeBits(int countOfBits, int countOfCluster) {
-	int bit = 0;
+	int bit = 1;
 	int *bits;
 	bits = calloc(countOfBits, sizeof(int));
 	for (int i = 0; i < countOfBits; i++) {
@@ -106,6 +106,7 @@ int *getFreeBits(int countOfBits, int countOfCluster) {
 			return NULL;
 		}
 		*(bits + i) = bit;
+		bit++;
 	}
 	return bits;
 }

@@ -6,7 +6,7 @@
  */
 #define MAX_DEEP 200
 #include "shell.h"
-Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile);
+Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir);
 char** splitPath(char *path, int *numOfSplits);
 void freePaths(int deep, char **paths);
 int helpIsDirEmpty(Mft_Item *item);
@@ -15,7 +15,7 @@ int helpRemoveFromDir(Mft_Item *fromItem, int UID);
 /**
  * Postupne prochazim zadanou cestou a zkousim jestli existuje nebo ne
  */
-Mft_Item *parsePath(char *path) {
+Mft_Item *parsePath(char *path, bool isDir) {
 
 	Mft_Item *tempPosition;
 	Mft_Item *temp;
@@ -48,7 +48,7 @@ Mft_Item *parsePath(char *path) {
 		//hledam jestli slozka ve ktere jsem obsahuje tu kterou hledam
 		else {
 			//pokud ne vracim NULL cesta je spatne
-			if ((temp = dirContains(tempPosition, paths[i])) == NULL) {
+			if ((temp = dirContains(tempPosition, paths[i],isDir)) == NULL) {
 				return NULL;
 			}
 			//pokud ano sestoupim niz
@@ -79,13 +79,13 @@ char** splitPath(char *path, int *numOfSplits) {
  * Zkontroluje jestli predana slozka obsahuje
  * Adresar/soubor se jmenem predanym jako druhy argument
  */
-Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile) {
+Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir) {
 	Mft_Item *temp;
 	Mft_Item *resolut = NULL;
 	int i = 1;
 	temp = dir;
 	while (temp != NULL) {
-		if ((resolut = helpDirContains(temp, nameOfFile)) != NULL) {
+		if ((resolut = helpDirContains(temp, nameOfFile, isDir)) != NULL) {
 			return resolut;
 		}
 		i++;
@@ -96,7 +96,7 @@ Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile) {
 /**
  * pomocna metoda k dirContains
  */
-Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile) {
+Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir) {
 	char *content;
 	char *tempUID;
 	Mft_Item *temp;
@@ -114,7 +114,7 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile) {
 			if (temp == NULL) {
 				debugs("parsePath: Slozka s nazvem %s ma zaznam v clusteru ze ma obsahovat \nslozku/soubor o UID:%s ale nenasel jsem odpovidajici mft_item",item->item_name,tempUID);
 			}
-			if (strcmp(temp->item_name, nameOfFile) == 0) {
+			if (strcmp(temp->item_name, nameOfFile) == 0 && isDir == temp->isDirectory) {
 				free(content);
 				content = NULL;
 				return temp;
@@ -171,7 +171,7 @@ int helpIsDirEmpty(Mft_Item *item) {
 	}
 	return TRUE;
 }
-int removeDir(Mft_Item *itemToRemove, Mft_Item *fromDir) {
+int removeFromDir(Mft_Item *itemToRemove, Mft_Item *fromDir) {
 	Mft_Item *temp;
 	temp = fromDir;
 	int i = 1;

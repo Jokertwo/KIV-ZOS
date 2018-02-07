@@ -60,10 +60,32 @@ int ls(Mft_Item *item) {
 	} while (item->item_order_total >= i);
 	return TRUE;
 }
+int cat(Mft_Item *item) {
+	char *buffer;
+	for (int i = 1; i <= item->item_order_total; i++) {
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			if(item->fragments[j].fragment_start_address == VOID){
+				continue;
+			}
+			buffer = calloc(item->fragments[j].fragment_count,boot->cluster_size);
+			fseek(fp,item->fragments[j].fragment_start_address,SEEK_SET);
+			fread(buffer,boot->cluster_size,item->fragments[j].fragment_count,fp);
+			printf("%s\n",buffer);
+			free(buffer);
+		}
+		if(i < item->item_order_total){
+			if((item = getMftItemByUID(item->uid,i)) == NULL){
+				return FALSE;
+			}
+		}
+
+	}
+	return TRUE;
+}
 
 int cd(char *path) {
 	Mft_Item *temp;
-	if ((temp = parsePath(path)) == NULL) {
+	if ((temp = parsePath(path, true)) == NULL) {
 		return FALSE;
 	}
 	position = temp;
@@ -76,7 +98,7 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	char *buffer;
 	Mft_Item *new;
 	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
-	if (dirContains(item, nameOfFile) != NULL) {
+	if (dirContains(item, nameOfFile, false) != NULL) {
 		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
 				nameOfFile, item->item_name);
 		return FALSE;
@@ -106,12 +128,17 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	int UID = getNewUID();
 	int *tempBits = bits;
 	int index = 0;
-
+	printList();
+	printf("To byl stav pred\n");
 	//vytvorim mft_zaznamy
 	for (int i = 0; i < countOfMftItems; i++) {
 		if ((new = getFreeMftItem()) == NULL) {
 			debugs("incp: Neni volny zadny mft zaznam\n");
 			free(bits);
+			//pokud jsem jiz nejake zaznamy upravil nactu si puvodni stav ze souboru
+			if (i > 0) {
+				reloadMftFromFile();
+			}
 			return FALSE;
 		}
 		new->uid = UID;
@@ -134,6 +161,8 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 			}
 		}
 	}
+
+	printList();
 
 	fseek(file, 0, SEEK_CUR);
 	//pokud se povedlo vytvorit MFT zaznamy, zacnu zapisovat do souboru
@@ -158,15 +187,17 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 		}
 
 	}
+	printBits(boot->cluster_count / 8, bitmap);
 	//zapisu zmeny do bitmapy
 	for (int i = 0; i < numberOfClusters; i++) {
 		writeBit(*(bits + i));
 	}
+	printBits(boot->cluster_count / 8, bitmap);
 	free(bits);
 	//zapisu soubor do nadrazene slozky
-	char *sUID = calloc(intLeng(new->uid)+2,sizeof(char));
-	sprintf(sUID,"%d#",new->uid);
-	addToCluster(sUID,item->fragments[0].fragment_start_address);
+	char *sUID = calloc(intLeng(new->uid) + 2, sizeof(char));
+	sprintf(sUID, "%d#", new->uid);
+	addToCluster(sUID, item->fragments[0].fragment_start_address);
 	free(sUID);
 	//updatuji velikost u nadrazenych slozek
 	updateSize(new, true);
@@ -200,11 +231,15 @@ int pwd(void) {
 	return FALSE;
 
 }
+
 int rmdir(Mft_Item *dir) {
-	if (isDirEmpty(dir) == FALSE) {
-		return FALSE;
-	}
-	if (removeDir(dir, getMftItemByUID(dir->backUid, 1)) == TRUE) {
+
+	printBits(boot->cluster_count / 8, bitmap);
+	for (int i = 1; i <= dir->item_order_total; i++) {
+		if (removeFromDir(dir, getMftItemByUID(dir->backUid, i)) != TRUE) {
+			debugs("rmdir: Nepovedlo se najit nadrazenou slozku\n");
+			return FALSE;
+		}
 		//delete bitmap
 		for (int i = 0; i < MAX_FRAGMENT_COUNT; i++) {
 			for (int j = 0; j < dir->fragments[i].fragment_count; j++) {
@@ -216,13 +251,15 @@ int rmdir(Mft_Item *dir) {
 
 			}
 		}
-		updateSize(dir, false);
+		if (i == dir->item_order_total) {
+			updateSize(dir, false);
+		}
 		nullMftItem(dir);
-		writeChangeToFile();
-		return TRUE;
-	}
 
-	return FALSE;
+	}
+	printBits(boot->cluster_count / 8, bitmap);
+	writeChangeToFile();
+	return TRUE;
 }
 
 int mkdir(Mft_Item *parentDir, char *name) {
@@ -231,7 +268,7 @@ int mkdir(Mft_Item *parentDir, char *name) {
 	char stringUID[12];
 	//overim jestli parentDir
 	//zjistim jestli slozka uz slozku s timto nazvem neobsahuje
-	if (dirContains(parentDir, name) != NULL) {
+	if (dirContains(parentDir, name, true) != NULL) {
 		printf("EXIST (nelze zalozit, jiz existuje\n");
 		return FALSE;
 	}

@@ -23,5 +23,6 @@ Mft_Item *getMftItemByName(char *itemName,int8_t itemOrder);
 Mft_Item *getFreeMftItem();
 int getNewUID(void);
 void writeMftToFile(void);
+void reloadMftFromFile(void);
 
 #endif /* MFTHELPER_H_ */

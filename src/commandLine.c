@@ -78,7 +78,7 @@ int functions(int numCommand) {
 		} else {
 			Mft_Item *tempPosition;
 			//zkusim najit cestu do zadane slozky
-			if ((tempPosition = parsePath(commands[1])) == NULL) {
+			if ((tempPosition = parsePath(commands[1], true)) == NULL) {
 				printf("PATH NOT FOUND (neexistujici cesta)\n");
 				return FALSE;
 			}
@@ -98,12 +98,17 @@ int functions(int numCommand) {
 			if ((fileName = strrchr(commands[1], '/')) != NULL) {
 				//odriznu si cestu
 				size = fileName - commands[1];
-				//alokuju si pamet pro cestu(o jedna vetsi pro ukoncujici znak)
-				path = calloc(size + 1, sizeof(char));
-				//vyjmu si cestu z argumentu
-				strncpy(path, commands[1], size);
+				if (size > 0) {
+					//alokuju si pamet pro cestu(o jedna vetsi pro ukoncujici znak)
+					path = calloc(size + 1, sizeof(char));
+					//vyjmu si cestu z argumentu
+					strncpy(path, commands[1], size);
+				} else {
+					path = calloc(2, sizeof(char));
+					strcpy(path, "/");
+				}
 				//cestu si projdu a zjistim tak jestli existuje
-				if ((tempPosition = parsePath(path)) == NULL) {
+				if ((tempPosition = parsePath(path, true)) == NULL) {
 					printf("PATH NOT FOUND (neexistujici cesta)\n");
 					free(path);
 					return FALSE;
@@ -113,19 +118,54 @@ int functions(int numCommand) {
 				//odstranim si z nazvu lomitko
 				fileName++;
 				//pokusim se vytvorit slozku a pritom zkontroluji jestli uz neexistuje
-				mkdir(tempPosition, fileName);
+				if (mkdir(tempPosition, fileName) == TRUE) {
+					printf("OK\n");
+					return TRUE;
+				}
 
 			}
 			//nebo vytvorim slozku tam kde jsem
 			else {
 				tempPosition = position;
 				//pokusim se vytvorit slozku a pritom zkontroluji jestli uz neexistuje
-				mkdir(tempPosition, commands[1]);
+				if (mkdir(tempPosition, commands[1]) == TRUE) {
+					printf("OK\n");
+					return TRUE;
+				}
 			}
-			printf("OK\n");
-			return TRUE;
+			return FALSE;
 		}
 		printf("MISSING ARGUMENT (chybejici argument\n");
+		return FALSE;
+	}
+	if (strcmp(commands[0], "rm") == 0) {
+		Mft_Item *file;
+		if (commands[1] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		if ((file = parsePath(commands[1], false)) == NULL) {
+			printf("FILE NOT FOUND\n");
+			return FALSE;
+		}
+		if (rmdir(file) == FALSE) {
+			return FALSE;
+		}
+		printf("OK\n");
+		return TRUE;
+
+	}
+	if (strcmp(commands[0], "cat") == 0) {
+		Mft_Item *file;
+		if (commands[1] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		if ((file = parsePath(commands[1], true)) == NULL) {
+			printf("FILE NOT FOUND (neni zdroj)\n");
+		}
+		cat(file);
+		return TRUE;
 	}
 	if (strcmp(commands[0], "cd") == 0) {
 		if (commands[1] == NULL) {
@@ -140,27 +180,26 @@ int functions(int numCommand) {
 		return TRUE;
 	}
 	if (strcmp(commands[0], "rmdir") == 0) {
+		Mft_Item *dir = NULL;
 		if (commands[1] == NULL) {
 			printf("MISSING ARGUMENT (chybejici argument)\n");
 			return FALSE;
 		}
-
-		Mft_Item *dir = NULL;
 		//pokud cesta je spravne
-		if ((dir = parsePath(commands[1])) == NULL) {
+		if ((dir = parsePath(commands[1], true)) == NULL) {
 			printf("PATH NOT FOUND (neexistujici cesta)");
 			return FALSE;
 		}
-
-		//pokud je cilem slozka
-		if (dir->isDirectory == true) {
-			//zkusim ji odstranit
-			if (rmdir(dir) == FALSE) {
-				printf(
-						"NOT EMPTY (adresar obsahuje podaresare, nebo soubory)\n");
-				return FALSE;
-			}
+		//pokud je slozka prazdna
+		if (isDirEmpty(dir) == FALSE) {
+			printf("NOT EMPTY (adresar obsahuje podaresare, nebo soubory)\n");
+			return FALSE;
 		}
+		//zkusim ji odstranit
+		if (rmdir(dir) == FALSE) {
+			return FALSE;
+		}
+
 		return TRUE;
 	}
 	if (strcmp(commands[0], "incp") == 0) {
@@ -187,7 +226,7 @@ int functions(int numCommand) {
 			//vyjmu si cestu z argumentu
 			strncpy(path, commands[2], size);
 			//cestu si projdu a zjistim tak jestli existuje
-			if ((dir = parsePath(path)) == NULL) {
+			if ((dir = parsePath(path, true)) == NULL) {
 				printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
 				free(path);
 				return FALSE;
@@ -218,9 +257,11 @@ int functions(int numCommand) {
 			printInfoAboutMftItem(position);
 			return TRUE;
 		}
-		if ((temp = parsePath(commands[1])) == NULL) {
-			printf("FILE NAME NOT FOUND (neni zdroj)\n");
-			return FALSE;
+		if ((temp = parsePath(commands[1], true)) == NULL) {
+			if ((temp = parsePath(commands[1], false)) == NULL) {
+				printf("FILE NAME NOT FOUND (neni zdroj)\n");
+				return FALSE;
+			}
 		}
 		printInfoAboutMftItem(temp);
 		return TRUE;

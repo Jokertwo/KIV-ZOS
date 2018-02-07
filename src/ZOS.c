@@ -21,7 +21,7 @@ void end(int sig);
 
 int main(void) {
 
-	debug = 1;
+	debug = 0;
 	pthread_t b;
 
 	create(b);

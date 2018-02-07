@@ -17,12 +17,13 @@ int mkdir(Mft_Item *parentDir, char *name);
 int pwd(void);
 int cd(char *path);
 int rmdir(Mft_Item *dir);
-int incp(char *nameOfFile,Mft_Item *item, FILE *file);
+int incp(char *nameOfFile, Mft_Item *item, FILE *file);
+int cat(Mft_Item *item);
 
-Mft_Item *parsePath(char *path);
-Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile);
+Mft_Item *parsePath(char *path, bool isDir);
+Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir);
 int isDirEmpty(Mft_Item *dir);
-int removeDir(Mft_Item *itemToRemove, Mft_Item *fromDir);
+int removeFromDir(Mft_Item *itemToRemove, Mft_Item *fromDir);
 void nullMftItem(Mft_Item *item);
 void writeChangeToFile();
 int updateSize(Mft_Item *startItem, bool upOrDown);
