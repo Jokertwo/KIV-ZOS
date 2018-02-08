@@ -65,7 +65,7 @@ void *createTextFile(void *arg) {
 	////////////////////// korenovy adresar//////////////////
 
 	//vytvorim a zapisu korenovy adresar
-	Mft_Item *root = createItem(ROOT, 1, 1, 1, "ROOT", 1, ROOT_BACK_UID);
+	Mft_Item *root = createItem(ROOT, 1, 1, 1, "ROOT", 2, ROOT_BACK_UID);
 	root->fragments[0].fragment_count = 1;
 	root->fragments[0].fragment_start_address = boot->data_start_address;
 

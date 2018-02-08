@@ -39,6 +39,8 @@ Mft_Item *getNext() {
 			temp = consistenci->item;
 			break;
 		}
+		break;
+
 	}
 	consistenci = consistenci->next;
 	pthread_mutex_unlock(&lock);

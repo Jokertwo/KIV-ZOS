@@ -30,18 +30,19 @@ int ls(Mft_Item *item) {
 			//pro kazde si vzhledam mft zaznam a zpracuji ho
 			while (token != NULL) {
 				Mft_Item *temp;
-				int uid = atoi(token);
-				if ((uid == FREE_ITEM) || ((temp = getMftItemByUID(uid, 1))
-						== NULL)) {
-					debugs("ls: Nelze na jit zaznam pro UDI=%s, ulozene v clusteru na adrese=%d\n",token,(
-									item->fragments->fragment_start_address + (j
-											* item->fragments->fragment_start_address)));
-					return FALSE;
-				} else {
-					if (temp->isDirectory == true) {
-						printf("+%s\n", temp->item_name);
+				int UID = atoi(token);
+				if (UID > 0) {
+					if ((temp = getMftItemByUID(UID, 1)) == NULL) {
+						debugs("ls: Nelze na jit zaznam pro UDI=%s, ulozene v clusteru na adrese=%d\n",token,(
+										item->fragments->fragment_start_address + (j
+												* item->fragments->fragment_start_address)));
+						return FALSE;
 					} else {
-						printf("-%s\n", temp->item_name);
+						if (temp->isDirectory == true) {
+							printf("+%s\n", temp->item_name);
+						} else {
+							printf("-%s\n", temp->item_name);
+						}
 					}
 				}
 				token = strtok(NULL, DELIMETER);

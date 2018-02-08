@@ -113,14 +113,17 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile) {
 		//projdu jednotliva UID a hledam shodu
 		tempUID = strtok(content, DELIMETER);
 		while (tempUID != NULL) {
-			temp = getMftItemByUID(atoi(tempUID), 1);
-			if (temp == NULL) {
-				debugs("parsePath: Slozka s nazvem %s ma zaznam v clusteru ze ma obsahovat \nslozku/soubor o UID:%s ale nenasel jsem odpovidajici mft_item",item->item_name,tempUID);
-			}
-			if (strcmp(temp->item_name, nameOfFile) == 0) {
-				free(content);
-				content = NULL;
-				return temp;
+			int UID = atoi(tempUID);
+			if (UID > 0) {
+				temp = getMftItemByUID(UID, 1);
+				if (temp == NULL) {
+					debugs("parsePath: Slozka s nazvem %s ma zaznam v clusteru ze ma obsahovat \nslozku/soubor o UID:%s ale nenasel jsem odpovidajici mft_item",item->item_name,tempUID);
+				}
+				if (strcmp(temp->item_name, nameOfFile) == 0) {
+					free(content);
+					content = NULL;
+					return temp;
+				}
 			}
 			tempUID = strtok(NULL, DELIMETER);
 		}
@@ -196,13 +199,14 @@ int helpIsDirEmpty(Mft_Item *item) {
 		//projdu jednotliva UID a hledam shodu
 		tempUID = strtok(content, DELIMETER);
 		while (tempUID != NULL) {
-			//pokud jsem neco v clusteru nasel pokusim se tomu priradit zaznam v mft
-			//v opacnem pripade je jedna jen o sum
-			temp = getMftItemByUID(atoi(tempUID), 1);
-			if (temp != NULL) {
-				free(content);
-				content = NULL;
-				return FALSE;
+			int UID = atoi(tempUID);
+			if (UID > 0) {
+				temp = getMftItemByUID(UID, 1);
+				if (temp != NULL) {
+					free(content);
+					content = NULL;
+					return FALSE;
+				}
 			}
 			tempUID = strtok(NULL, DELIMETER);
 		}

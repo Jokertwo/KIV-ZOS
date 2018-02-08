@@ -24,7 +24,6 @@ int conCheck(int numberOfThread) {
 		}
 	}
 	finishConsistency();
-	printf("Vysledek %d", value);
 	return value;
 }
 
@@ -38,9 +37,13 @@ void *checkConsistency(void *arg) {
 			//projdu vsechny mft fragmenty
 			for (int i = 1; i <= item->item_order_total; i++) {
 				for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+					if (item->fragments[j].fragment_start_address == VOID) {
+						continue;
+					}
+
 					char *temp = getClusterContent(
-							item->fragments[i].fragment_start_address,
-							item->fragments[i].fragment_count);
+							item->fragments[j].fragment_start_address,
+							item->fragments[j].fragment_count);
 					size += strlen(temp);
 					free(temp);
 				}
@@ -55,14 +58,17 @@ void *checkConsistency(void *arg) {
 			char *temp = getClusterContent(
 					item->fragments[0].fragment_start_address,
 					item->fragments[0].fragment_count);
-			size += strlen(temp);
 			pom = strtok(temp, DELIMETER);
 			while (pom != NULL) {
-				tempMft = getMftItemByUID(atoi(pom), 1);
-				size += tempMft->item_size;
+				int UID = atoi(pom);
+				if (UID > 0) {
+					tempMft = getMftItemByUID(UID, 1);
+					size += tempMft->item_size;
+				}
 				pom = strtok(NULL, DELIMETER);
 			}
 			free(temp);
+			size += intLeng(item->uid) + 1;
 			printResolt(item, size);
 		}
 		return (void*) size;
@@ -78,7 +84,8 @@ void printResolt(Mft_Item *item, int size) {
 				item->item_size, size);
 		return;
 	}
-	printf("Kozistetni stav.   %s %s ma ocekavanou velikost %d a realnou velikost %d\n",
-				item->isDirectory ? "Slozka" : "Soubor", item->item_name,
-				item->item_size, size);
+	printf(
+			"Kozistetni stav.   %s %s ma ocekavanou velikost %d a realnou velikost %d\n",
+			item->isDirectory ? "Slozka" : "Soubor", item->item_name,
+			item->item_size, size);
 }

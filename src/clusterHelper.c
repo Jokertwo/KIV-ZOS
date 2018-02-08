@@ -30,6 +30,7 @@ char *getClusterContent(int clusterAdress, int countOfClusters) {
 	return content;
 }
 
+
 int addToCluster(char *contentToAdd, int clusterAdress) {
 	FILE *fp;
 	if ((fp = fopen(fileName, "r+")) == NULL) {
