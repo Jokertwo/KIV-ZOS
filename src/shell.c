@@ -107,7 +107,7 @@ int cp(Mft_Item *from, Mft_Item *to, char *nameOfFile) {
 	FILE *fp;
 	Mft_Item *new;
 	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
-	if (dirContains(to, nameOfFile, false) != NULL) {
+	if (dirContains(to, nameOfFile) != NULL) {
 		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
 				nameOfFile, to->item_name);
 		return FALSE;
@@ -183,7 +183,7 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	FILE *fp;
 
 	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
-	if (dirContains(item, nameOfFile, false) != NULL) {
+	if (dirContains(item, nameOfFile) != NULL) {
 		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
 				nameOfFile, item->item_name);
 		return FALSE;
@@ -291,9 +291,35 @@ int pwd(void) {
 
 }
 
+int mv(Mft_Item *from, Mft_Item *to, char *fileName) {
+	Mft_Item *parentFrom;
+
+	if ((parentFrom = getMftItemByUID(from->backUid, 1)) == NULL) {
+		return FALSE;
+	}
+	//odstranim z  povodniho mista
+	removeFromDir(from, parentFrom);
+	//upravim velikosti nadrazenych slozek
+	updateSize(from, false);
+	// zmenim odkaz na nadrazenou slozku
+	from->backUid = to->uid;
+	//zapisu soubor do nadrazene slozky
+	char *sUID = calloc(intLeng(from->uid) + 2, sizeof(char));
+	sprintf(sUID, "%d#", from->uid);
+	addToCluster(sUID, to->fragments[0].fragment_start_address);
+	free(sUID);
+	//zmenim nazev souboru
+	memset(from->item_name, 0, 12);
+	strncpy(from->item_name, fileName, 11);
+	//upravim velikost nadrazenych slozek na movem miste
+	updateSize(from, true);
+	return TRUE;
+}
+/**
+ * odstrani soubor
+ */
 int rmdir(Mft_Item *dir) {
 
-	printBits(boot->cluster_count / 8, bitmap);
 	for (int i = 1; i <= dir->item_order_total; i++) {
 		if (removeFromDir(dir, getMftItemByUID(dir->backUid, i)) != TRUE) {
 			debugs("rmdir: Nepovedlo se najit nadrazenou slozku\n");
@@ -316,18 +342,19 @@ int rmdir(Mft_Item *dir) {
 		nullMftItem(dir);
 
 	}
-	printBits(boot->cluster_count / 8, bitmap);
 	writeChangeToFile();
 	return TRUE;
 }
-
+/**
+ * odstarani slozku
+ */
 int mkdir(Mft_Item *parentDir, char *name) {
 	Mft_Item *newDir;
 	int bit;
 	char stringUID[12];
 	//overim jestli parentDir
 	//zjistim jestli slozka uz slozku s timto nazvem neobsahuje
-	if (dirContains(parentDir, name, true) != NULL) {
+	if (dirContains(parentDir, name) != NULL) {
 		printf("EXIST (nelze zalozit, jiz existuje\n");
 		return FALSE;
 	}

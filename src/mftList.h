@@ -8,7 +8,6 @@
 #ifndef MFTHELPER_H_GUARD
 #define MFTHELPER_H_GUARD
 
-
 #include "mft_item.h"
 #include <pthread.h>
 
@@ -18,13 +17,17 @@ void printList(void);
 void clearList(void);
 bool isEmpty();
 void push(Mft_Item *item);
-Mft_Item *getMftItemByUID(int32_t UID,int8_t itemOrder);
-Mft_Item *getMftItemByName(char *itemName,int8_t itemOrder);
+Mft_Item *getMftItemByUID(int32_t UID, int8_t itemOrder);
+Mft_Item *getMftItemByName(char *itemName, int8_t itemOrder);
 Mft_Item *getFreeMftItem();
 int getNewUID(void);
 void writeMftToFile(void);
 void reloadMftFromFile(void);
 int getNumberOfFreeMft();
 void countFreeMft(Mft_Item *item);
+void initConsistency();
+Mft_Item *getNext();
+void finishConsistency();
+bool isNext();
 
 #endif /* MFTHELPER_H_ */

@@ -6,7 +6,7 @@
  */
 #define MAX_DEEP 200
 #include "shell.h"
-Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir);
+Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile);
 char** splitPath(char *path, int *numOfSplits);
 void freePaths(int deep, char **paths);
 int helpIsDirEmpty(Mft_Item *item);
@@ -48,7 +48,10 @@ Mft_Item *parsePath(char *path, bool isDir) {
 		//hledam jestli slozka ve ktere jsem obsahuje tu kterou hledam
 		else {
 			//pokud ne vracim NULL cesta je spatne
-			if ((temp = dirContains(tempPosition, paths[i],  i == count-1 ? isDir : true)) == NULL) {
+			if ((temp = dirContains(tempPosition, paths[i])) == NULL) {
+				return NULL;
+			}
+			if (temp->isDirectory != (i == (count - 1) ? isDir : true)) {
 				return NULL;
 			}
 			//pokud ano sestoupim niz
@@ -79,13 +82,13 @@ char** splitPath(char *path, int *numOfSplits) {
  * Zkontroluje jestli predana slozka obsahuje
  * Adresar/soubor se jmenem predanym jako druhy argument
  */
-Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir) {
+Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile) {
 	Mft_Item *temp;
 	Mft_Item *resolut = NULL;
 	int i = 1;
 	temp = dir;
 	while (temp != NULL) {
-		if ((resolut = helpDirContains(temp, nameOfFile, isDir)) != NULL) {
+		if ((resolut = helpDirContains(temp, nameOfFile)) != NULL) {
 			return resolut;
 		}
 		i++;
@@ -96,7 +99,7 @@ Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir) {
 /**
  * pomocna metoda k dirContains
  */
-Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir) {
+Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile) {
 	char *content;
 	char *tempUID;
 	Mft_Item *temp;
@@ -114,8 +117,7 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir) {
 			if (temp == NULL) {
 				debugs("parsePath: Slozka s nazvem %s ma zaznam v clusteru ze ma obsahovat \nslozku/soubor o UID:%s ale nenasel jsem odpovidajici mft_item",item->item_name,tempUID);
 			}
-			if (strcmp(temp->item_name, nameOfFile) == 0 && isDir
-					== temp->isDirectory) {
+			if (strcmp(temp->item_name, nameOfFile) == 0) {
 				free(content);
 				content = NULL;
 				return temp;

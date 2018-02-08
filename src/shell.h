@@ -20,9 +20,10 @@ int rmdir(Mft_Item *dir);
 int incp(char *nameOfFile, Mft_Item *item, FILE *file);
 int cat(Mft_Item *item);
 int cp(Mft_Item *from, Mft_Item *to, char *nameOfFile);
+int mv(Mft_Item *from, Mft_Item *to, char *fileName);
 
 Mft_Item *parsePath(char *path, bool isDir);
-Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir);
+Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile);
 int isDirEmpty(Mft_Item *dir);
 int removeFromDir(Mft_Item *itemToRemove, Mft_Item *fromDir);
 void nullMftItem(Mft_Item *item);
@@ -36,5 +37,9 @@ int intLeng(int n);
 Resolut *destination(char *path, bool isDir);
 char *bufferForCp(FILE *fp, Mft_Item *item);
 void afterCp(int numberOfClusters, int *bits, Mft_Item *new,Mft_Item *parent);
+int conCheck(int numberOfThread);
+
+
+void *checkConsistency(void *arg);
 
 #endif /* SHELL_H_ */

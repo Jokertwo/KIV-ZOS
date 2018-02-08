@@ -12,6 +12,7 @@
 #define TRUE 1
 #define FALSE -1
 #define DELIMETER "#"
+#define MAX_LINE 200
 
 #define FREE_ITEM 0
 #define ROOT 1

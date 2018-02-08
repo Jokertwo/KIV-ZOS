@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include<signal.h>
+#include <signal.h>
 
 #include "createBootFile.h"
 #include "commandLine.h"
@@ -22,14 +22,15 @@ void end(int sig);
 int main(void) {
 
 	strcpy(fileName,"Test01.bin");
-	debug = 1;
+	debug = 0;
 	pthread_t b;
 
 	create(b);
 	load(b);
 	//(void) signal(SIGINT, end);
-	pthread_create(&b, NULL, commandLine, NULL);
-	pthread_join(b, NULL);
+	//pthread_create(&b, NULL, commandLine, NULL);
+	//pthread_join(b, NULL);
+	commandLine(NULL);
 
 	clean();
 

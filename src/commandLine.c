@@ -8,23 +8,33 @@
 #define END -1000
 #include "commandLine.h"
 
-int functions(int numCommand);
+int functions(char **commands);
 void printHelp(void);
-void freeCommands(int numCommands);
-void prepareCommands(void);
+void freeCommands(int numCommands, char **commands);
+void prepareCommands(char **commands);
+void splitCommand(char **commands, char *inputLine, int *numCommand);
 
-char* commands[MAX];
-
-void prepareCommands(void) {
+void prepareCommands(char **commands) {
 	for (int i = 0; i < MAX; i++) {
 		commands[i] = NULL;
 	}
 }
 
-void freeCommands(int numCommands) {
+void freeCommands(int numCommands, char **commands) {
 	for (int i = 0; i < numCommands; i++) {
 		free(commands[i]);
 		commands[i] = NULL;
+	}
+}
+void splitCommand(char **commands, char *inputLine, int *numCommand) {
+	char *input;
+	input = strtok(inputLine, " ");
+	for (int i = 0; input != NULL; i++) {
+		*numCommand = *numCommand + 1;
+		commands[i] = malloc(strlen(input) + 1);
+		memset(commands[i], 0, strlen(input) + 1);
+		strncpy(commands[i], input, strlen(input));
+		input = strtok(NULL, " ");
 	}
 }
 
@@ -32,11 +42,10 @@ void *commandLine(void *args) {
 
 	//buffer pro prikaz
 	char* inputLine = (char*) malloc(MAX);
-	char* input;
-	int i;
 	int numCommand = 0;
+	char* commands[MAX];
 
-	prepareCommands();
+	prepareCommands(commands);
 	while (true) {
 		memset(inputLine, 0, MAX);
 		pwd();
@@ -48,20 +57,13 @@ void *commandLine(void *args) {
 		if (strlen(inputLine) == 0) {
 			continue;
 		}
-		input = strtok(inputLine, " ");
-		for (i = 0; input != NULL; i++) {
-			numCommand++;
-			commands[i] = malloc(strlen(input) + 1);
-			memset(commands[i], 0, strlen(input) + 1);
-			strncpy(commands[i], input, strlen(input));
-			input = strtok(NULL, " ");
-		}
+		splitCommand(commands, inputLine, &numCommand);
 
-		if (functions(numCommand) == END) {
-			freeCommands(numCommand);
+		if (functions(commands) == END) {
+			freeCommands(numCommand, commands);
 			break;
 		}
-		freeCommands(numCommand);
+		freeCommands(numCommand, commands);
 		numCommand = 0;
 
 	}
@@ -69,7 +71,7 @@ void *commandLine(void *args) {
 	return (int*) TRUE;
 }
 
-int functions(int numCommand) {
+int functions(char **commands) {
 
 	if (strcmp(commands[0], "ls") == 0) {
 		//pokud nebyl dan argument vypisu obsah slozky kde jsem
@@ -121,6 +123,32 @@ int functions(int numCommand) {
 		return TRUE;
 
 	}
+	if (strcmp(commands[0], "mv") == 0) {
+		Mft_Item *s1;
+		Resolut *res;
+		if (commands[1] == NULL || commands[2] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		//pokusim se najit zdroj
+		if ((s1 = parsePath(commands[1], false)) == NULL) {
+			printf("FILE NOT FOUND (neni zdroj)\n");
+			return FALSE;
+		}
+		if ((res = destination(commands[2], true)) == NULL) {
+			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
+			return FALSE;
+		}
+		if (mv(s1, res->item, res->name) == FALSE) {
+			printf("FAIL\n");
+			free(res);
+			return FALSE;
+		}
+		free(res);
+		printf("OK\n");
+		return TRUE;
+
+	}
 	if (strcmp(commands[0], "cat") == 0) {
 		Mft_Item *file;
 		if (commands[1] == NULL) {
@@ -146,6 +174,10 @@ int functions(int numCommand) {
 		printf("OK\n");
 		return TRUE;
 	}
+	if(strcmp(commands[0], "conCheck") == 0){
+		conCheck(3);
+		return TRUE;
+	}
 	if (strcmp(commands[0], "rmdir") == 0) {
 		Mft_Item *dir = NULL;
 		if (commands[1] == NULL) {
@@ -166,7 +198,37 @@ int functions(int numCommand) {
 		if (rmdir(dir) == FALSE) {
 			return FALSE;
 		}
-
+		printf("OK\n");
+		return TRUE;
+	}
+	if (strcmp(commands[0], "outcp") == 0) {
+		Mft_Item *from;
+		FILE *file,*fp;
+		char *buffer;
+		//overim dostatek argumentu
+		if (commands[1] == NULL || commands[2] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		if((from = parsePath(commands[1],false)) == NULL){
+			printf("FILE NOT FOUND (neni zdroj)\n");
+			return FALSE;
+		}
+		if((file = fopen(commands[2], "w")) == NULL){
+			printf("PATH NOT FOUND (neexistujici cilova cesta)\n");
+			return FALSE;
+		}
+		//otevru svuj souborovy system a vyjmu si obsah
+		if((fp = fopen(fileName,"r")) == NULL){
+			printf("FAIL NTFS\n");
+			fclose(file);
+			return FALSE;
+		}
+		buffer = bufferForCp(fp,from);
+		fwrite(buffer,from->item_size,1,file);
+		fclose(file);
+		fclose(fp);
+		printf("OK\n");
 		return TRUE;
 	}
 	if (strcmp(commands[0], "incp") == 0) {
@@ -196,18 +258,6 @@ int functions(int numCommand) {
 		printf("OK\n");
 		return TRUE;
 	}
-	if (strcmp(commands[0], "freeMft") == 0) {
-		printf("free MFT: %d\n", getNumberOfFreeMft());
-		return TRUE;
-	}
-	if (strcmp(commands[0], "printBit") == 0) {
-		printBits(boot->cluster_count / 8, bitmap);
-		return TRUE;
-	}
-	if (strcmp(commands[0], "printMft") == 0) {
-		printList();
-		return TRUE;
-	}
 	if (strcmp(commands[0], "cp") == 0) {
 		Mft_Item *from;
 		Resolut *res;
@@ -221,6 +271,7 @@ int functions(int numCommand) {
 			printf("FILE NOT FOUND (neni zdroj)\n");
 			return FALSE;
 		}
+		//a cilovou slozku
 		if ((res = destination(commands[2], true)) == NULL) {
 			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
 			return FALSE;
@@ -251,7 +302,60 @@ int functions(int numCommand) {
 		printInfoAboutMftItem(temp);
 		return TRUE;
 	}
+	if (strcmp(commands[0], "load") == 0) {
+		int numCommandFromFile = 0;
+		char line[MAX_LINE];
+		char* commandFromFile[MAX];
+		FILE *file;
+		if (commands[1] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		if ((file = fopen(commands[1], "r")) == NULL) {
+			printf("FILE NOT FOUND (neni zdroj)");
+			return false;
+		}
+		prepareCommands(commandFromFile);
+		//budu cist po jedne radce
+		while (fgets(line, MAX_LINE, file) != NULL) {
+			int delka = strlen(line);
+			//pokud jsem neprecetl celou radku nemuyu ji ypracovat
+			if (delka == MAX_LINE - 1 && line[delka - 1] != '\n') {
+				printf("Chyba - vstupni raka prilis dlouha \n %s \n", line);
+				continue;
+			}
+			if (line[delka - 1] == '\n') {
+				line[delka - 1] = '\0';
+			}
+			//predpracuju si jeden prikaz
+			splitCommand(commandFromFile, line, &numCommandFromFile);
+			//a ypracuju ho
+			if (functions(commandFromFile) == END) {
+				freeCommands(numCommandFromFile, commandFromFile);
+				printf("OK\n");
+				fclose(file);
+				return END;
+			}
+			freeCommands(numCommandFromFile, commandFromFile);
+			numCommandFromFile = 0;
+		}
+		fclose(file);
+		printf("OK\n");
+		return TRUE;
+	}
 
+	if (strcmp(commands[0], "freeMft") == 0) {
+		printf("free MFT: %d\n", getNumberOfFreeMft());
+		return TRUE;
+	}
+	if (strcmp(commands[0], "printBit") == 0) {
+		printBits(boot->cluster_count / 8, bitmap);
+		return TRUE;
+	}
+	if (strcmp(commands[0], "printMft") == 0) {
+		printList();
+		return TRUE;
+	}
 	if (strcmp(commands[0], "-") == 0) {
 		debugs("Konec");
 		return END;

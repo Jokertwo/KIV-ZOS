@@ -11,7 +11,7 @@
 #include "boot_record.h"
 #include "createBootFile.h"
 
-int pocetMftItem = 10;
+int pocetMftItem = 30;
 
 void *createTextFile(void *arg) {
 

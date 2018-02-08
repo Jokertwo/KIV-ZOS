@@ -8,6 +8,7 @@ C_SRCS += \
 ../src/bitMap.c \
 ../src/clusterHelper.c \
 ../src/commandLine.c \
+../src/consistencyCheck.c \
 ../src/createBootFile.c \
 ../src/load.c \
 ../src/mftList.c \
@@ -20,6 +21,7 @@ OBJS += \
 ./src/bitMap.o \
 ./src/clusterHelper.o \
 ./src/commandLine.o \
+./src/consistencyCheck.o \
 ./src/createBootFile.o \
 ./src/load.o \
 ./src/mftList.o \
@@ -32,6 +34,7 @@ C_DEPS += \
 ./src/bitMap.d \
 ./src/clusterHelper.d \
 ./src/commandLine.d \
+./src/consistencyCheck.d \
 ./src/createBootFile.d \
 ./src/load.d \
 ./src/mftList.d \

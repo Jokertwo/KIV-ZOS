@@ -15,27 +15,52 @@ void deleteFirst(void);
 void relaseMemory(MFT_List *item);
 
 MFT_List *head = NULL;
+MFT_List *consistenci;
 //v teto promene se bude udrzovat uid pro dalsi zaznam
 int32_t freeUID = 0;
 void updateUID(int32_t UID);
 void setRoot(Mft_Item *item);
 
-
+pthread_mutex_t lock;
 int freeMft = 0;
-/**
- * vlozi zaznam do listu
 
- void push(Mft_Item *item) {
- MFT_List *new = (MFT_List *) malloc(sizeof(MFT_List));
- new->item = item;
+void initConsistency() {
+	consistenci = head;
+	if (pthread_mutex_init(&lock, NULL) != 0) {
+		printf("Chyba mutex\n");
+		return;
+	}
+}
+Mft_Item *getNext() {
+	Mft_Item *temp = NULL;
+	pthread_mutex_lock(&lock);
+	while (consistenci != NULL) {
+		if (consistenci->item->uid != FREE_ITEM) {
+			temp = consistenci->item;
+			break;
+		}
+	}
+	consistenci = consistenci->next;
+	pthread_mutex_unlock(&lock);
+	return temp;
 
- pthread_rwlock_wrlock(&list_lock);
- updateUID(new->item->uid);
- new->next = head;
- head = new;
- pthread_rwlock_unlock(&list_lock);
- }
- */
+}
+bool isNext() {
+	bool res;
+	pthread_mutex_lock(&lock);
+	if (consistenci != NULL) {
+		res = true;
+		pthread_mutex_unlock(&lock);
+		return res;
+	}
+	res = false;
+	pthread_mutex_unlock(&lock);
+	return res;
+}
+void finishConsistency() {
+	pthread_mutex_destroy(&lock);
+}
+
 void push(Mft_Item *item) {
 	MFT_List *temp;
 	MFT_List *new = (MFT_List *) malloc(sizeof(MFT_List));

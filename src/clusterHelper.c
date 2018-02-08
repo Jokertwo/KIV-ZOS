@@ -14,7 +14,7 @@ int getAdressOfCluster(int numberOfCluster);
  */
 char *getClusterContent(int clusterAdress, int countOfClusters) {
 	FILE *fp;
-	if ((fp = fopen(fileName, "r+")) == NULL) {
+	if ((fp = fopen(fileName, "r")) == NULL) {
 		debugs("getClusterContent: napovedlo se otevrit soubor pro cteni");
 	}
 	//alokoju si pamet pro obsah clusteru
