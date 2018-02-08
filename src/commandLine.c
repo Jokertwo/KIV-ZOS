@@ -88,52 +88,18 @@ int functions(int numCommand) {
 		return TRUE;
 	}
 	if (strcmp(commands[0], "mkdir") == 0) {
-		char *fileName = NULL;
-		char *path;
-		int size;
-		Mft_Item *tempPosition;
+		Resolut *res;
 		//byl zadan nejaky argument
 		if (commands[1] != NULL) {
-			//hledam jestli byla zadana cesta do slozky
-			if ((fileName = strrchr(commands[1], '/')) != NULL) {
-				//odriznu si cestu
-				size = fileName - commands[1];
-				if (size > 0) {
-					//alokuju si pamet pro cestu(o jedna vetsi pro ukoncujici znak)
-					path = calloc(size + 1, sizeof(char));
-					//vyjmu si cestu z argumentu
-					strncpy(path, commands[1], size);
-				} else {
-					path = calloc(2, sizeof(char));
-					strcpy(path, "/");
-				}
-				//cestu si projdu a zjistim tak jestli existuje
-				if ((tempPosition = parsePath(path, true)) == NULL) {
-					printf("PATH NOT FOUND (neexistujici cesta)\n");
-					free(path);
-					return FALSE;
-				}
-				//cestu jiz nepotrebuji
-				free(path);
-				//odstranim si z nazvu lomitko
-				fileName++;
-				//pokusim se vytvorit slozku a pritom zkontroluji jestli uz neexistuje
-				if (mkdir(tempPosition, fileName) == TRUE) {
-					printf("OK\n");
-					return TRUE;
-				}
-
+			if ((res = destination(commands[1], true)) == NULL) {
+				printf("PATH NOT FOUND (neexistujici cesta)\n");
+				return FALSE;
 			}
-			//nebo vytvorim slozku tam kde jsem
-			else {
-				tempPosition = position;
-				//pokusim se vytvorit slozku a pritom zkontroluji jestli uz neexistuje
-				if (mkdir(tempPosition, commands[1]) == TRUE) {
-					printf("OK\n");
-					return TRUE;
-				}
+			if (mkdir(res->item, res->name) == TRUE) {
+				printf("OK\n");
+				free(res);
+				return TRUE;
 			}
-			return FALSE;
 		}
 		printf("MISSING ARGUMENT (chybejici argument\n");
 		return FALSE;
@@ -204,9 +170,7 @@ int functions(int numCommand) {
 	}
 	if (strcmp(commands[0], "incp") == 0) {
 		FILE *file;
-		char *newFile;
-		char *path;
-		Mft_Item *dir;
+		Resolut *res;
 		//overim dostatek argumentu
 		if (commands[1] == NULL || commands[2] == NULL) {
 			printf("MISSING ARGUMENT (chybejici argument)\n");
@@ -217,39 +181,36 @@ int functions(int numCommand) {
 			printf("FILE NAME NOT FOUND (neni zdroj)\n");
 			return FALSE;
 		}
-		//hledam jestli byla zadana cesta do slozky
-		if ((newFile = strrchr(commands[2], '/')) != NULL) {
-			//odriznu si cestu
-			int size = newFile - commands[2];
-			//alokuju si pamet pro cestu(o jedna vetsi pro ukoncujici znak)
-			path = calloc(size + 1, sizeof(char));
-			//vyjmu si cestu z argumentu
-			strncpy(path, commands[2], size);
-			//cestu si projdu a zjistim tak jestli existuje
-			if ((dir = parsePath(path, true)) == NULL) {
-				printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
-				free(path);
-				return FALSE;
-			}
-			//cestu jiz nepotrebuji
-			free(path);
-			//odstranim si z nazvu lomitko
-			newFile++;
-			if (incp(newFile, dir, file) == FALSE) {
-				printf("Problem\n");
-				return FALSE;
-			}
-
-		} else {
-			//nebo vztvorim soubor tam kde jsem
-			dir = position;
-			if (incp(commands[2], dir, file) == FALSE) {
-				printf("Problem\n");
-				return FALSE;
-			}
+		if ((res = destination(commands[2], true)) == NULL) {
+			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
+			return FALSE;
 		}
+		if (incp(res->name, res->item, file) == FALSE) {
+			free(res);
+			return FALSE;
+		}
+		free(res);
 		printf("OK\n");
 		return TRUE;
+	}
+	if (strcmp(commands[0], "cp") == 0) {
+		Mft_Item *from;
+		Resolut *res;
+		//overim dostatek argumentu
+		if (commands[1] == NULL || commands[2] == NULL) {
+			printf("MISSING ARGUMENT (chybejici argument)\n");
+			return FALSE;
+		}
+		//pokusim se najit zdroj
+		if ((from = parsePath(commands[1], false)) == NULL) {
+			printf("FILE NOT FOUND (neni zdroj)\n");
+			return FALSE;
+		}
+		if ((res = destination(commands[2], true)) == NULL) {
+			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
+			return FALSE;
+		}
+
 	}
 	if (strcmp(commands[0], "info") == 0) {
 		Mft_Item *temp;

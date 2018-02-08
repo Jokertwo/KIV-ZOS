@@ -32,5 +32,6 @@ int getNumberOfClusters(int fileSize);
 int getSizeOfBitBlock(int *bits, int sizeOfArray);
 int getNumberOfBitBlocks(int *bits, int sizeOfArray);
 int intLeng(int n);
+Resolut *destination(char *path, bool isDir);
 
 #endif /* SHELL_H_ */

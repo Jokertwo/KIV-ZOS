@@ -30,6 +30,11 @@ typedef struct mft_list{
 	struct mft_list *next;
 }MFT_List;
 
+typedef struct resolut{
+	Mft_Item *item;
+	char *name;
+}Resolut;
+
 Mft_Item *position;
 Mft_Item *root;
 

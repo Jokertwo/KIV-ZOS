@@ -128,6 +128,42 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir) {
 
 	return NULL;
 }
+Resolut *destination(char *path, bool isDir) {
+
+	char *tempPath;
+	int size;
+	Resolut *res = calloc(sizeof(Resolut),1);
+	//hledam jestli byla zadana cesta do slozky
+	if ((res->name = strrchr(path, '/')) != NULL) {
+		//odriznu si cestu
+		size = res->name - path;
+		if (size > 0) {
+			//alokuju si pamet pro cestu(o jedna vetsi pro ukoncujici znak)
+			tempPath = calloc(size + 1, sizeof(char));
+			//vyjmu si cestu z argumentu
+			strncpy(tempPath, path, size);
+		} else {
+			tempPath = calloc(2, sizeof(char));
+			strcpy(tempPath, "/");
+		}
+		//cestu si projdu a zjistim tak jestli existuje
+		if ((res->item = parsePath(tempPath, isDir)) == NULL) {
+			free(tempPath);
+			return NULL;
+		}
+		free(tempPath);
+		//odstranim si z nazvu lomitko
+		res->name++;
+
+	}
+	//nebo vytvorim slozku tam kde jsem
+	else {
+		res->item = position;
+		res->name = path;
+	}
+	return res;
+}
+
 /**
  * zjisti jestli je slozka prazdna
  */
