@@ -19,6 +19,7 @@ int cd(char *path);
 int rmdir(Mft_Item *dir);
 int incp(char *nameOfFile, Mft_Item *item, FILE *file);
 int cat(Mft_Item *item);
+int cp(Mft_Item *from, Mft_Item *to, char *nameOfFile);
 
 Mft_Item *parsePath(char *path, bool isDir);
 Mft_Item *dirContains(Mft_Item *dir, char *nameOfFile, bool isDir);
@@ -33,5 +34,7 @@ int getSizeOfBitBlock(int *bits, int sizeOfArray);
 int getNumberOfBitBlocks(int *bits, int sizeOfArray);
 int intLeng(int n);
 Resolut *destination(char *path, bool isDir);
+char *bufferForCp(FILE *fp, Mft_Item *item);
+void afterCp(int numberOfClusters, int *bits, Mft_Item *new,Mft_Item *parent);
 
 #endif /* SHELL_H_ */

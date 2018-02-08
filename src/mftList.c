@@ -20,6 +20,8 @@ int32_t freeUID = 0;
 void updateUID(int32_t UID);
 void setRoot(Mft_Item *item);
 
+
+int freeMft = 0;
 /**
  * vlozi zaznam do listu
 
@@ -41,6 +43,7 @@ void push(Mft_Item *item) {
 	new->next = NULL;
 	updateUID(item->uid);
 	setRoot(item);
+	countFreeMft(item);
 	if (head == NULL) {
 		head = new;
 	} else {
@@ -51,6 +54,14 @@ void push(Mft_Item *item) {
 		temp->next = new;
 	}
 
+}
+void countFreeMft(Mft_Item *item) {
+	if (item->uid == FREE_ITEM) {
+		freeMft++;
+	}
+}
+int getNumberOfFreeMft() {
+	return freeMft;
 }
 void setRoot(Mft_Item *item) {
 	if (item->uid == ROOT && item->backUid == ROOT_BACK_UID
@@ -182,6 +193,7 @@ Mft_Item *getFreeMftItem() {
 	while (temp != NULL) {
 		if (temp->item->uid == FREE_ITEM) {
 			debugs("getFreeMftItem: Nasel jsem volny zaznam MFT\n");
+			freeMft--;
 			return temp->item;
 		}
 		temp = temp->next;
@@ -199,6 +211,7 @@ void deleteFirst() {
 	head = head->next;
 	pthread_rwlock_unlock(&list_lock);
 	relaseMemory(temp);
+	freeMft--;
 }
 
 /**

@@ -24,5 +24,7 @@ Mft_Item *getFreeMftItem();
 int getNewUID(void);
 void writeMftToFile(void);
 void reloadMftFromFile(void);
+int getNumberOfFreeMft();
+void countFreeMft(Mft_Item *item);
 
 #endif /* MFTHELPER_H_ */

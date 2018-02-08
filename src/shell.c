@@ -99,6 +99,81 @@ int cd(char *path) {
 	position = temp;
 	return TRUE;
 }
+int cp(Mft_Item *from, Mft_Item *to, char *nameOfFile) {
+	int *bits;
+	int numberOfClusters;
+	int index = 0;
+	char *buffer;
+	FILE *fp;
+	Mft_Item *new;
+	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
+	if (dirContains(to, nameOfFile, false) != NULL) {
+		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
+				nameOfFile, to->item_name);
+		return FALSE;
+	}
+	//zjistim kolik budu potrebovat clusteru a podle toho si reknu o bity
+	numberOfClusters = getNumberOfClusters(from->item_size);
+	if ((bits = getFreeBits(numberOfClusters, boot->cluster_count)) == NULL) {
+		debugs("incp: Nedostatek volneho mista\n");
+		return FALSE;
+	}
+	//podle rozlozeni bitu si zjistim kolik budu potrebovat fragmentu -->mft_itemu
+	int countOfFragments = getNumberOfBitBlocks(bits, numberOfClusters);
+	int countOfMftItems = (countOfFragments / MAX_FRAGMENT_COUNT)
+			+ (countOfFragments % MAX_FRAGMENT_COUNT);
+
+	//zjistim si jestli mam dost volnych mft
+	if (getNumberOfFreeMft() < countOfMftItems) {
+		free(bits);
+		debugs("cp: Nedostatek mft zaznamu\n");
+		printf("FAIL\n");
+		return FALSE;
+	}
+	//otevru si soubor
+	if ((fp = fopen(fileName, "r+b")) == NULL) {
+		debugs("cp: Nepovedlo se otevrit soubor pro zapis.");
+		free(bits);
+		printf("FAIL\n");
+		return FALSE;
+	}
+	//pokud ano vytvorim si mft zaznamy
+	int newUID = getNewUID();
+	int *tempBits = bits;
+	buffer = bufferForCp(fp, from);
+	char *tempBuffer = buffer;
+	for (int i = 1; i <= countOfMftItems; i++) {
+		new = getFreeMftItem();
+		new->uid = newUID;
+		strcpy(new->item_name, nameOfFile);
+		new->backUid = to->uid;
+		new->item_size = from->item_size;
+		new->item_order = i;
+		new->isDirectory = false;
+		new->item_order_total = countOfMftItems;
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			new->fragments[j].fragment_start_address = boot->data_start_address
+					+ ((*tempBits - 1) * boot->cluster_size);
+			new->fragments[j].fragment_count = getSizeOfBitBlock(tempBits,
+					numberOfClusters - index);
+			fseek(fp, new->fragments[j].fragment_start_address, SEEK_SET);
+			fwrite(tempBuffer, boot->cluster_size,
+					new->fragments[j].fragment_count, fp);
+			index += new->fragments[j].fragment_count;
+			if (index < numberOfClusters) {
+				tempBits = tempBits + new->fragments[j].fragment_count;
+				tempBuffer = tempBuffer + (boot->cluster_size
+						* new->fragments[j].fragment_count);
+			} else {
+				break;
+			}
+		}
+	}
+	free(buffer);
+	fclose(fp);
+	afterCp(numberOfClusters, bits, new, to);
+	return TRUE;
+}
 int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	int fileSize;
 	int numberOfClusters;
@@ -113,15 +188,11 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 				nameOfFile, item->item_name);
 		return FALSE;
 	}
-	if (item->isDirectory != true) {
-		debugs("incp: Cilova slozka neni slozkou\n");
-		printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
-		return FALSE;
-	}
+
 	//zjistim si velikost souboru
 	fseek(file, 0, SEEK_END);
 	fileSize = ftell(file);
-	rewind(file);
+
 	//zjistim kolik budu potrebovat clusteru a podle toho si reknu o bity
 	numberOfClusters = getNumberOfClusters(fileSize);
 	if ((bits = getFreeBits(numberOfClusters, boot->cluster_count)) == NULL) {
@@ -135,90 +206,63 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	int countOfMftItems = (countOfFragments / MAX_FRAGMENT_COUNT)
 			+ (countOfFragments % MAX_FRAGMENT_COUNT);
 
+	//zjistim si jestli mam dost volnych mft
+	if (getNumberOfFreeMft() < countOfMftItems) {
+		free(bits);
+		debugs("cp: Nedostatek mft zaznamu\n");
+		printf("FAIL\n");
+		return FALSE;
+	}
 	int UID = getNewUID();
 	int *tempBits = bits;
 	int index = 0;
 
-	//vytvorim mft_zaznamy
-	for (int i = 0; i < countOfMftItems; i++) {
-		if ((new = getFreeMftItem()) == NULL) {
-			debugs("incp: Neni volny zadny mft zaznam\n");
-			free(bits);
-			//pokud jsem jiz nejake zaznamy upravil nactu si puvodni stav ze souboru
-			if (i > 0) {
-				reloadMftFromFile();
-			}
-			return FALSE;
-		}
+	//otevru soubor s ntfs
+	if ((fp = fopen(fileName, "r+b")) == NULL) {
+		debugs("incp: Napovedlo se otevrit soubor se souborovym systemem");
+		free(bits);
+		return FALSE;
+	}
+	rewind(file);
+	//nactu si soubor z venku do bufferu
+	buffer = calloc(fileSize + 1, sizeof(char));
+	fread(buffer, fileSize, 1, file);
+	char *tempBuffer = NULL;
+	tempBuffer = buffer;
+
+	//vytvorim mft_zaznamy a zapisu clustery do ntfs
+	for (int i = 1; i <= countOfMftItems; i++) {
+		new = getFreeMftItem();
 		new->uid = UID;
 		strncpy(new->item_name, nameOfFile, 11);
 		new->backUid = item->uid;
 		new->item_size = fileSize;
-		new->item_order = i + 1;
-		new->item_order_total = countOfMftItems;
+		new->item_order = i;
 		new->isDirectory = false;
+		new->item_order_total = countOfMftItems;
 		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
 			new->fragments[j].fragment_start_address = boot->data_start_address
 					+ ((*tempBits - 1) * boot->cluster_size);
 			new->fragments[j].fragment_count = getSizeOfBitBlock(tempBits,
 					numberOfClusters - index);
+			fseek(fp, new->fragments[j].fragment_start_address, SEEK_SET);
+			fwrite(tempBuffer, boot->cluster_size,
+					new->fragments[j].fragment_count, fp);
 			index += new->fragments[j].fragment_count;
 			if (index < numberOfClusters) {
 				tempBits = tempBits + new->fragments[j].fragment_count;
+				tempBuffer = tempBuffer + (boot->cluster_size
+						* new->fragments[j].fragment_count);
 			} else {
 				break;
 			}
 		}
 	}
-
-
-	if ((fp = fopen(fileName, "r+b")) == NULL) {
-		debugs("incp: Napovedlo se otevrit soubor se souborovym systemem");
-		return FALSE;
-	}
-
-	fseek(file, 0, SEEK_CUR);
-	//pokud se povedlo vytvorit MFT zaznamy, zacnu zapisovat do souboru
-	//tohle neni idealni (operace hledani je dost draha)
-	for (int i = 1; i <= countOfMftItems; i++) {
-		Mft_Item *item = getMftItemByUID(UID, i);
-		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
-			if (item->fragments[j].fragment_count == 0) {
-				break;
-			}
-			//nactu ze souboru
-			buffer = calloc(boot->cluster_size,
-					item->fragments[j].fragment_count);
-			fread(buffer, boot->cluster_size,
-					item->fragments[j].fragment_count, file);
-			//zapisu do sveho
-			fseek(fp, item->fragments[j].fragment_start_address, SEEK_SET);
-			fwrite(buffer, boot->cluster_size,
-					item->fragments[j].fragment_count, fp);
-			printf("%s\n", buffer);
-			//uvolnim buffer
-			free(buffer);
-		}
-
-	}
+	free(buffer);
 	fclose(file);
 	fclose(fp);
-	printBits(boot->cluster_count / 8, bitmap);
-	//zapisu zmeny do bitmapy
-	for (int i = 0; i < numberOfClusters; i++) {
-		writeBit(*(bits + i));
-	}
-	printBits(boot->cluster_count / 8, bitmap);
-	free(bits);
-	//zapisu soubor do nadrazene slozky
-	char *sUID = calloc(intLeng(new->uid) + 2, sizeof(char));
-	sprintf(sUID, "%d#", new->uid);
-	addToCluster(sUID, item->fragments[0].fragment_start_address);
-	free(sUID);
-	//updatuji velikost u nadrazenych slozek
-	updateSize(new, true);
-	//za[isu bitmapu a mft do souboru
-	writeChangeToFile();
+	afterCp(numberOfClusters, bits, new, item);
+
 	return TRUE;
 
 }

@@ -48,7 +48,7 @@ Mft_Item *parsePath(char *path, bool isDir) {
 		//hledam jestli slozka ve ktere jsem obsahuje tu kterou hledam
 		else {
 			//pokud ne vracim NULL cesta je spatne
-			if ((temp = dirContains(tempPosition, paths[i], isDir)) == NULL) {
+			if ((temp = dirContains(tempPosition, paths[i],  i == count-1 ? isDir : true)) == NULL) {
 				return NULL;
 			}
 			//pokud ano sestoupim niz
@@ -132,7 +132,7 @@ Resolut *destination(char *path, bool isDir) {
 
 	char *tempPath;
 	int size;
-	Resolut *res = calloc(sizeof(Resolut),1);
+	Resolut *res = calloc(sizeof(Resolut), 1);
 	//hledam jestli byla zadana cesta do slozky
 	if ((res->name = strrchr(path, '/')) != NULL) {
 		//odriznu si cestu
@@ -149,6 +149,7 @@ Resolut *destination(char *path, bool isDir) {
 		//cestu si projdu a zjistim tak jestli existuje
 		if ((res->item = parsePath(tempPath, isDir)) == NULL) {
 			free(tempPath);
+			free(res);
 			return NULL;
 		}
 		free(tempPath);
@@ -271,6 +272,28 @@ int helpRemoveFromDir(Mft_Item *fromItem, int UID, FILE *fp) {
 	}
 	return FALSE;
 }
+char *bufferForCp(FILE *fp, Mft_Item *item) {
+	char *buffer;
+	buffer = calloc(item->item_size + 1, sizeof(char));
+	char *tempBuffer;
+	for (int i = 1; i <= item->item_order_total; i++) {
+		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
+			if (item->fragments[j].fragment_start_address != VOID) {
+				tempBuffer = calloc(boot->cluster_size,
+						item->fragments[j].fragment_count);
+				fseek(fp, item->fragments[j].fragment_start_address, SEEK_SET);
+				fread(tempBuffer, boot->cluster_size,
+						item->fragments[j].fragment_count, fp);
+				strcat(buffer, tempBuffer);
+				free(tempBuffer);
+			}
+		}
+		if (i < item->item_order_total) {
+			item = getMftItemByUID(item->uid, i + 1);
+		}
+	}
+	return buffer;
+}
 
 void nullMftItem(Mft_Item *item) {
 	item->uid = FREE_ITEM;
@@ -283,6 +306,7 @@ void nullMftItem(Mft_Item *item) {
 		item->fragments[i].fragment_count = 0;
 		item->fragments[i].fragment_start_address = VOID;
 	}
+	countFreeMft(item);
 }
 int updateSize(Mft_Item *startItem, bool upOrDown) {
 	Mft_Item *temp;
@@ -342,6 +366,24 @@ int getNumberOfBitBlocks(int *bits, int sizeOfArray) {
 		}
 	}
 	return count;
+}
+
+void afterCp(int numberOfClusters, int *bits, Mft_Item *new, Mft_Item *parent) {
+	//zapisu zmeny do bitmapy
+	for (int i = 0; i < numberOfClusters; i++) {
+		writeBit(*(bits + i));
+	}
+
+	free(bits);
+	//zapisu soubor do nadrazene slozky
+	char *sUID = calloc(intLeng(new->uid) + 2, sizeof(char));
+	sprintf(sUID, "%d#", new->uid);
+	addToCluster(sUID, parent->fragments[0].fragment_start_address);
+	free(sUID);
+	//updatuji velikost u nadrazenych slozek
+	updateSize(new, true);
+	//zapisu bitmapu a mft do souboru
+	writeChangeToFile();
 }
 /**
  * zjisti kolik bitu jde postupne zasebou

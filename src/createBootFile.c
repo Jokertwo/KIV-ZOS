@@ -52,7 +52,7 @@ void *createTextFile(void *arg) {
 	a = a / sizeof(Mft_Item);
 	for (int i = 1; i < a; i++) {
 		fseek(fp, boot->mft_start_address + (i * sizeof(Mft_Item)), SEEK_SET);
-		Mft_Item *item = createItem(FREE_ITEM, 0, 1, 1, "0", 1, 0);
+		Mft_Item *item = createItem(FREE_ITEM, 0, 0, 0, "0", 0, 0);
 		fwrite(item, sizeof(Mft_Item), 1, fp);
 		free(item);
 	}

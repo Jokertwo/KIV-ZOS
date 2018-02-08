@@ -129,6 +129,7 @@ int functions(int numCommand) {
 		}
 		if ((file = parsePath(commands[1], false)) == NULL) {
 			printf("FILE NOT FOUND (neni zdroj)\n");
+			return FALSE;
 		}
 		cat(file);
 		return TRUE;
@@ -183,14 +184,28 @@ int functions(int numCommand) {
 		}
 		if ((res = destination(commands[2], true)) == NULL) {
 			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
+			fclose(file);
 			return FALSE;
 		}
 		if (incp(res->name, res->item, file) == FALSE) {
+			fclose(file);
 			free(res);
 			return FALSE;
 		}
 		free(res);
 		printf("OK\n");
+		return TRUE;
+	}
+	if (strcmp(commands[0], "freeMft") == 0) {
+		printf("free MFT: %d\n", getNumberOfFreeMft());
+		return TRUE;
+	}
+	if (strcmp(commands[0], "printBit") == 0) {
+		printBits(boot->cluster_count / 8, bitmap);
+		return TRUE;
+	}
+	if (strcmp(commands[0], "printMft") == 0) {
+		printList();
 		return TRUE;
 	}
 	if (strcmp(commands[0], "cp") == 0) {
@@ -210,6 +225,15 @@ int functions(int numCommand) {
 			printf("PATH NOT FOUND (neexistuje cilova cesta)\n");
 			return FALSE;
 		}
+		if (cp(from, res->item, res->name) == FALSE) {
+			free(res);
+			printf("FAIL\n");
+			return FALSE;
+		}
+
+		printf("OK\n");
+		free(res);
+		return TRUE;
 
 	}
 	if (strcmp(commands[0], "info") == 0) {
