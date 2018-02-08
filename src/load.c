@@ -47,7 +47,7 @@ void *readBoot(void *arg) {
 	//jdu na zacatek bitmapy
 	fseek(fp, boot->bitmap_start_address, SEEK_SET);
 	fread(bitmap, sizeof(int8_t), boot->cluster_count / 8, fp);
-
+	fclose(fp);
 	if (setRootPosition() == FALSE) {
 		return (int*) FALSE;
 	}

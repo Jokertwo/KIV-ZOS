@@ -172,7 +172,7 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	}
 
 
-	if ((fp = fopen(fileName, "w+b")) == NULL) {
+	if ((fp = fopen(fileName, "r+b")) == NULL) {
 		debugs("incp: Napovedlo se otevrit soubor se souborovym systemem");
 		return FALSE;
 	}

@@ -18,6 +18,7 @@ void *createTextFile(void *arg) {
 	printf("Vytvarim testovaci soubor.\n");
 
 	FILE *fp;
+	boot_record *boot;
 
 	if ((fp = fopen(fileName, "wb")) == NULL) {
 		//chyba pri otevirani souboru
@@ -26,7 +27,7 @@ void *createTextFile(void *arg) {
 	}
 
 	//vytvorim strukturu a naplnim ji daty
-	boot_record *boot = malloc(sizeof(struct boot_record));
+	boot = calloc(sizeof(boot_record),1);
 
 	strcpy(boot->signature, "Test01");
 	strcpy(boot->volume_descriptor, "Prvni pokus o bootFile");
@@ -98,7 +99,8 @@ void *createTextFile(void *arg) {
 
 Mft_Item *createItem(int32_t UID, bool isDirectory, int8_t itemOrder,
 		int8_t itemOrderTotal, char *name, int32_t itemSize, int32_t back) {
-	Mft_Item *item = malloc(sizeof(Mft_Item));
+	Mft_Item *item;
+	item = calloc(sizeof(Mft_Item),1);
 	item->uid = UID;
 	item->isDirectory = isDirectory;
 	item->item_order = itemOrder;
