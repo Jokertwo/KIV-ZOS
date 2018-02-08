@@ -10,7 +10,7 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir);
 char** splitPath(char *path, int *numOfSplits);
 void freePaths(int deep, char **paths);
 int helpIsDirEmpty(Mft_Item *item);
-int helpRemoveFromDir(Mft_Item *fromItem, int UID);
+int helpRemoveFromDir(Mft_Item *fromItem, int UID, FILE *fp);
 
 /**
  * Postupne prochazim zadanou cestou a zkousim jestli existuje nebo ne
@@ -48,7 +48,7 @@ Mft_Item *parsePath(char *path, bool isDir) {
 		//hledam jestli slozka ve ktere jsem obsahuje tu kterou hledam
 		else {
 			//pokud ne vracim NULL cesta je spatne
-			if ((temp = dirContains(tempPosition, paths[i],isDir)) == NULL) {
+			if ((temp = dirContains(tempPosition, paths[i], isDir)) == NULL) {
 				return NULL;
 			}
 			//pokud ano sestoupim niz
@@ -114,7 +114,8 @@ Mft_Item *helpDirContains(Mft_Item *item, char *nameOfFile, bool isDir) {
 			if (temp == NULL) {
 				debugs("parsePath: Slozka s nazvem %s ma zaznam v clusteru ze ma obsahovat \nslozku/soubor o UID:%s ale nenasel jsem odpovidajici mft_item",item->item_name,tempUID);
 			}
-			if (strcmp(temp->item_name, nameOfFile) == 0 && isDir == temp->isDirectory) {
+			if (strcmp(temp->item_name, nameOfFile) == 0 && isDir
+					== temp->isDirectory) {
 				free(content);
 				content = NULL;
 				return temp;
@@ -175,17 +176,22 @@ int removeFromDir(Mft_Item *itemToRemove, Mft_Item *fromDir) {
 	Mft_Item *temp;
 	temp = fromDir;
 	int i = 1;
-
+	FILE *fp;
+	if ((fp = fopen(fileName, "r+")) == NULL) {
+		debugs("removeFromDir: napovedlo se otevrit soubor pro zapis");
+	}
 	while (temp != NULL) {
-		if (helpRemoveFromDir(temp, itemToRemove->uid) == TRUE) {
+		if (helpRemoveFromDir(temp, itemToRemove->uid, fp) == TRUE) {
+			fclose(fp);
 			return TRUE;
 		}
 		i++;
 		temp = getMftItemByUID(temp->uid, i);
 	}
+	fclose(fp);
 	return FALSE;
 }
-int helpRemoveFromDir(Mft_Item *fromItem, int UID) {
+int helpRemoveFromDir(Mft_Item *fromItem, int UID, FILE *fp) {
 	int end = FALSE;
 	char *newContent;
 	char *content;
@@ -326,5 +332,5 @@ int getNumberOfClusters(int fileSize) {
 int intLeng(int n) {
 	if (n < 10)
 		return 1;
-	return  1 + intLeng(n / 10);
+	return 1 + intLeng(n / 10);
 }

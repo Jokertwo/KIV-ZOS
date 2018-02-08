@@ -35,8 +35,13 @@ void disposeBitMap(void) {
  * zapise bitmapu do souboru
  */
 void writeToFile(int bitmapStartAdress, int clusterCount) {
+	FILE *fp;
+	if((fp = fopen(fileName,"r+")) == NULL){
+		debugs("writeToFile: napovedlo se otevrit soubor pro zapis");
+	}
 	fseek(fp, bitmapStartAdress, SEEK_SET);
 	fwrite(bitmap, sizeof(int8_t), clusterCount / 8, fp);
+	fclose(fp);
 }
 
 /**

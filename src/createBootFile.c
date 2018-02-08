@@ -19,7 +19,7 @@ void *createTextFile(void *arg) {
 
 	FILE *fp;
 
-	if ((fp = fopen("Test01.bin", "wb")) == NULL) {
+	if ((fp = fopen(fileName, "wb")) == NULL) {
 		//chyba pri otevirani souboru
 		printf("Chyba pri otevirani souboru \n");
 		return (int*) FALSE;

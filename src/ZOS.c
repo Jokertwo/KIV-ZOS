@@ -21,6 +21,7 @@ void end(int sig);
 
 int main(void) {
 
+	strcpy(fileName,"Test01.bin");
 	debug = 0;
 	pthread_t b;
 

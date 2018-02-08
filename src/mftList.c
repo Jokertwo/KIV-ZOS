@@ -60,6 +60,10 @@ void setRoot(Mft_Item *item) {
 }
 
 void writeMftToFile(void) {
+	FILE *fp;
+	if ((fp = fopen(fileName, "r+")) == NULL) {
+		debugs("writeMftToFile: napovedlo se otevrit soubor pro zapis");
+	}
 	debugs("writeMftToFile: Zapisuju mft tabulku do souboru\n");
 	int index = 0;
 	MFT_List *temp = head;
@@ -70,9 +74,14 @@ void writeMftToFile(void) {
 		index++;
 		temp = temp->next;
 	}
+	fclose(fp);
 
 }
 void reloadMftFromFile(void) {
+	FILE *fp;
+	if ((fp = fopen(fileName, "r")) == NULL) {
+		debugs("reloadMftFromFile: napovedlo se otevrit soubor pro cteni");
+	}
 	//vymazu si seznam a nactu si ho znova
 	clearList();
 	//zjistim si pocet zaznamu
@@ -86,6 +95,7 @@ void reloadMftFromFile(void) {
 		fread(item, sizeof(Mft_Item), 1, fp);
 		push(item);
 	}
+	fclose(fp);
 }
 
 void updateUID(int32_t UID) {

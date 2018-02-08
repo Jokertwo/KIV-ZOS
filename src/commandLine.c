@@ -161,7 +161,7 @@ int functions(int numCommand) {
 			printf("MISSING ARGUMENT (chybejici argument)\n");
 			return FALSE;
 		}
-		if ((file = parsePath(commands[1], true)) == NULL) {
+		if ((file = parsePath(commands[1], false)) == NULL) {
 			printf("FILE NOT FOUND (neni zdroj)\n");
 		}
 		cat(file);

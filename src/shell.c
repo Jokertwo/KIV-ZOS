@@ -62,24 +62,32 @@ int ls(Mft_Item *item) {
 }
 int cat(Mft_Item *item) {
 	char *buffer;
+	FILE *fp;
+	if ((fp = fopen(fileName, "r")) == NULL) {
+		debugs("reloadMftFromFile: napovedlo se otevrit soubor pro cteni");
+	}
 	for (int i = 1; i <= item->item_order_total; i++) {
 		for (int j = 0; j < MAX_FRAGMENT_COUNT; j++) {
-			if(item->fragments[j].fragment_start_address == VOID){
+			if (item->fragments[j].fragment_start_address == VOID) {
 				continue;
 			}
-			buffer = calloc(item->fragments[j].fragment_count,boot->cluster_size);
-			fseek(fp,item->fragments[j].fragment_start_address,SEEK_SET);
-			fread(buffer,boot->cluster_size,item->fragments[j].fragment_count,fp);
-			printf("%s\n",buffer);
+			buffer = calloc(boot->cluster_size + 1,
+					item->fragments[j].fragment_count);
+			fseek(fp, item->fragments[j].fragment_start_address, SEEK_SET);
+			fread(buffer, boot->cluster_size,
+					item->fragments[j].fragment_count, fp);
+			printf("%s\n", buffer);
 			free(buffer);
 		}
-		if(i < item->item_order_total){
-			if((item = getMftItemByUID(item->uid,i)) == NULL){
+		if (i < item->item_order_total) {
+			if ((item = getMftItemByUID(item->uid, i)) == NULL) {
+				fclose(fp);
 				return FALSE;
 			}
 		}
 
 	}
+	fclose(fp);
 	return TRUE;
 }
 
@@ -97,6 +105,8 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	int *bits;
 	char *buffer;
 	Mft_Item *new;
+	FILE *fp;
+
 	//zkontroluji jestli slozka uz soubor se strejnym jmenem neobsahuje
 	if (dirContains(item, nameOfFile, false) != NULL) {
 		printf("FILE ALREADY EXIST (Soubor %s ve slozce %s jiz existuje)\n",
@@ -128,8 +138,7 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	int UID = getNewUID();
 	int *tempBits = bits;
 	int index = 0;
-	printList();
-	printf("To byl stav pred\n");
+
 	//vytvorim mft_zaznamy
 	for (int i = 0; i < countOfMftItems; i++) {
 		if ((new = getFreeMftItem()) == NULL) {
@@ -162,7 +171,11 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 		}
 	}
 
-	printList();
+
+	if ((fp = fopen(fileName, "w+b")) == NULL) {
+		debugs("incp: Napovedlo se otevrit soubor se souborovym systemem");
+		return FALSE;
+	}
 
 	fseek(file, 0, SEEK_CUR);
 	//pokud se povedlo vytvorit MFT zaznamy, zacnu zapisovat do souboru
@@ -180,13 +193,16 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 					item->fragments[j].fragment_count, file);
 			//zapisu do sveho
 			fseek(fp, item->fragments[j].fragment_start_address, SEEK_SET);
-			fwrite(buffer, boot->cluster_count,
+			fwrite(buffer, boot->cluster_size,
 					item->fragments[j].fragment_count, fp);
+			printf("%s\n", buffer);
 			//uvolnim buffer
 			free(buffer);
 		}
 
 	}
+	fclose(file);
+	fclose(fp);
 	printBits(boot->cluster_count / 8, bitmap);
 	//zapisu zmeny do bitmapy
 	for (int i = 0; i < numberOfClusters; i++) {
@@ -203,7 +219,6 @@ int incp(char *nameOfFile, Mft_Item *item, FILE *file) {
 	updateSize(new, true);
 	//za[isu bitmapu a mft do souboru
 	writeChangeToFile();
-	fclose(file);
 	return TRUE;
 
 }
