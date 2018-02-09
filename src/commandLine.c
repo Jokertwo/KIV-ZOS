@@ -127,7 +127,7 @@ int functions(char **commands) {
 		return TRUE;
 
 	}
-	if(strcmp(commands[0],"d") == 0){
+	if(strcmp(commands[0],"defrag") == 0){
 		defrag();
 		return TRUE;
 	}
@@ -364,7 +364,7 @@ int functions(char **commands) {
 		printList();
 		return TRUE;
 	}
-	if (strcmp(commands[0], "-") == 0) {
+	if (strcmp(commands[0], "exit") == 0) {
 		debugs("Konec");
 		return END;
 	}
@@ -373,12 +373,8 @@ int functions(char **commands) {
 		printf("\n");
 		return TRUE;
 	}
-	if (strcmp(commands[0], "help") == 0) {
-		printHelp();
-		return TRUE;
-	}
 
-	printf("Unknow command %s \nType in 'help'\n", commands[0]);
+	printf("Unknow command %s \n", commands[0]);
 	return TRUE;
 }
 

@@ -16,27 +16,27 @@
 #include "createBootFile.h"
 #include "commandLine.h"
 void create(pthread_t a);
-void load(pthread_t a);
+int load(pthread_t a);
 void end(int sig);
 
 int main(int args, char **argv) {
 	pthread_t b;
 	if (args == 2) {
-
 		strcpy(fileName, argv[1]);
 	} else {
 		strcpy(fileName, "MyNTFS.bin");
 		create(b);
-
 	}
 
 	debug = 0;
 
-	load(b);
+	if(load(b) == FALSE){
+		printf("Nelze nacist soubor");
+		return 1;
+	}
 	(void) signal(SIGINT, end);
-	pthread_create(&b, NULL, commandLine, NULL);
-	pthread_join(b, NULL);
 
+	commandLine(NULL);
 	clean();
 
 	return EXIT_SUCCESS;
@@ -48,9 +48,11 @@ void end(int sig) {
 	exit(1);
 
 }
-void load(pthread_t a) {
+int load(pthread_t a) {
+	void *b;
 	pthread_create(&a, NULL, readBoot, NULL);
-	pthread_join(a, NULL);
+	pthread_join(a, &b);
+	return (int)b;
 }
 
 void create(pthread_t a) {

@@ -345,7 +345,24 @@ void writeChangeToFile() {
  * vztiskne info o jednom mft_Itemu
  */
 void printInfoAboutMftItem(Mft_Item *item) {
-	printf("%s - %d - %d \n", item->item_name, item->uid, item->item_size);
+	Mft_Item *tem;
+	printf("NAME - UID - SIZE - [START_ARDRES_CLUSTER  - COUNT_CLUSTER]\n");
+	for (int i = 1; i <= tem->item_order_total; i++) {
+		printf("%s - %d - %d ", tem->item_name, tem->uid, tem->item_size);
+
+		for (int h = 0; h < MAX_FRAGMENT_COUNT; h++) {
+			if(item->fragments[h].fragment_start_address != VOID){
+			printf(" [%d %d] ", tem->fragments[h].fragment_start_address,tem->fragments[h].fragment_count);
+			}else{
+				printf(" [0 0] ");
+			}
+
+		}
+		printf("\n");
+		if(tem->item_order <tem->item_order_total){
+			tem = getMftItemByUID(tem->uid,i+1);
+		}
+	}
 }
 
 void freePaths(int deep, char **paths) {

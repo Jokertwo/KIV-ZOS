@@ -26,7 +26,7 @@ int debug;
 #define error_log(...) { fprintf(stderr, __VA_ARGS__); fflush(stderr); }
 
 //soubor s file-systemem
-char fileName[10];
+char fileName[20];
 
 #endif /* GLOBALVARIABLE_H_ */
 

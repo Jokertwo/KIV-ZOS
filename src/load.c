@@ -20,10 +20,10 @@ void *readBoot(void *arg) {
 	//vytvorim strukturu a naplnim ji daty
 	boot = calloc(sizeof(boot_record), 1);
 
-	if ((fp = fopen("Test01.bin", "r+b")) == NULL) {
+	if ((fp = fopen(fileName, "r+b")) == NULL) {
 		//chyba pri otevirani souboru
 		debugs("readBoot: Chyba pri otevirani souboru \n");
-		return 0;
+		return (int *)FALSE;
 	}
 	fread(boot, sizeof(struct boot_record), 1, fp);
 
