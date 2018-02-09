@@ -38,6 +38,8 @@ Resolut *destination(char *path, bool isDir);
 char *bufferForCp(FILE *fp, Mft_Item *item);
 void afterCp(int numberOfClusters, int *bits, Mft_Item *new,Mft_Item *parent);
 int conCheck(int numberOfThread);
+int defrag(void);
+
 
 
 void *checkConsistency(void *arg);

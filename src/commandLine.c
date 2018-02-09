@@ -95,12 +95,16 @@ int functions(char **commands) {
 		if (commands[1] != NULL) {
 			if ((res = destination(commands[1], true)) == NULL) {
 				printf("PATH NOT FOUND (neexistujici cesta)\n");
+
 				return FALSE;
 			}
 			if (mkdir(res->item, res->name) == TRUE) {
 				printf("OK\n");
 				free(res);
 				return TRUE;
+			}else{
+				free(res);
+				return FALSE;
 			}
 		}
 		printf("MISSING ARGUMENT (chybejici argument\n");
@@ -122,6 +126,10 @@ int functions(char **commands) {
 		printf("OK\n");
 		return TRUE;
 
+	}
+	if(strcmp(commands[0],"d") == 0){
+		defrag();
+		return TRUE;
 	}
 	if (strcmp(commands[0], "mv") == 0) {
 		Mft_Item *s1;

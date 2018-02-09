@@ -126,7 +126,7 @@ int *getFreeBlocBits(int countOfBits, int countOfClusters) {
 	if (countOfBits == 1) {
 		bits = calloc(countOfBits, sizeof(int));
 		*bits = getFreeBit(countOfClusters);
-		return NULL;
+		return bits;
 	}
 	//pokusim se najit souvisly blok jinak vracim NULL
 	for (int h = 1; h <= countOfClusters; h++) {
@@ -142,12 +142,12 @@ int *getFreeBlocBits(int countOfBits, int countOfClusters) {
 			}
 			//nasel jsem souvisly blok
 			if ((i + 1) == countOfBits) {
+					bits = calloc(countOfBits, sizeof(int));
 				//naplnim navratove pole
 				for (int j = 0; j < countOfBits; j++) {
-					bits = calloc(countOfBits, sizeof(int));
 					*(bits + j) = bit + j;
-					return bits;
 				}
+					return bits;
 			}
 		}
 	}

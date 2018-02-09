@@ -10,6 +10,7 @@ C_SRCS += \
 ../src/commandLine.c \
 ../src/consistencyCheck.c \
 ../src/createBootFile.c \
+../src/defrag.c \
 ../src/load.c \
 ../src/mftList.c \
 ../src/pwdList.c \
@@ -23,6 +24,7 @@ OBJS += \
 ./src/commandLine.o \
 ./src/consistencyCheck.o \
 ./src/createBootFile.o \
+./src/defrag.o \
 ./src/load.o \
 ./src/mftList.o \
 ./src/pwdList.o \
@@ -36,6 +38,7 @@ C_DEPS += \
 ./src/commandLine.d \
 ./src/consistencyCheck.d \
 ./src/createBootFile.d \
+./src/defrag.d \
 ./src/load.d \
 ./src/mftList.d \
 ./src/pwdList.d \
